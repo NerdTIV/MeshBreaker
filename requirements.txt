@@ -1,0 +1,41 @@
+# BLE Exploitation Suite - Requirements
+# Install: pip install -r requirements.txt
+
+# === BLE Radio Fuzzing ===
+# Packet sniffing and analysis
+scapy>=2.5.0                 # Packet manipulation and sniffing
+pycryptodome>=3.18.0         # Crypto operations
+
+# BLE service enumeration / scanning
+bleak>=0.20.0                # Cross-platform BLE (Windows/Linux/Mac)
+bluepy>=1.3.0; platform_system=="Linux"  # BLE GATT client (Linux only)
+
+# === Hardware Fuzzing ===
+# No special requirements - uses standard library
+
+# === Firmware Analysis ===
+pycryptodome>=3.18.0         # Crypto key extraction
+# Optional advanced tools:
+# capstone>=5.0.1            # Disassembly (ARM/Thumb)
+# unicorn>=2.0.1             # CPU emulation
+# r2pipe>=1.8.0              # Radare2 integration
+
+# === Utilities ===
+pyserial>=3.5                # Serial communication (for UART)
+
+# === Development/Optional ===
+# Install these for enhanced features:
+# wireshark (system package)     # PCAP analysis
+# btlejack (pip install btlejack) # BLE hijacking
+# ubertooth (system package)      # Ubertooth tools
+
+# === Platform-specific ===
+# Linux:
+#   sudo apt-get install bluez python3-bluez libbluetooth-dev
+#   sudo apt-get install wireshark tshark
+#
+# Mac:
+#   brew install bluez
+#
+# Windows:
+#   Install npcap for Scapy: https://npcap.com/

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -7,6 +8,12 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+=======
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+>>>>>>> 1f6a08a (Initial commit)
 .Python
 build/
 develop-eggs/
@@ -20,11 +27,16 @@ parts/
 sdist/
 var/
 wheels/
+<<<<<<< HEAD
+=======
+pip-wheel-metadata/
+>>>>>>> 1f6a08a (Initial commit)
 share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+<<<<<<< HEAD
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -205,3 +217,52 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+=======
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+logs/
+*.log
+reports/
+*.pcap
+*.pcapng
+*.bin
+*.hex
+*.elf
+*.img
+config/*.json
+!config/example_*.json
+keys.json
+credentials.json
+secrets/
+output/
+crashes/
+corpus/
+*.out
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+docs/_build/
+docs/_static/
+docs/_templates/
+Thumbs.db
+.DS_Store
+desktop.ini
+*.bak
+*.backup
+*~
+*.pyc
+*.pyo
+.claude/
+data/
+*.part_aa
+>>>>>>> 1f6a08a (Initial commit)
