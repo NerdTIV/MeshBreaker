@@ -1,5 +1,18 @@
 # MeshBreaker
 
+BLE protocol testing, firmware analysis, and hardware interface fuzzing toolkit.
+
+## Table of Contents
+
+- [Disclaimer](#disclaimer)
+- [Overview](#overview)
+- [Platform Support](#platform-support)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+
 ## Disclaimer
 
 This software is intended for authorized security testing and educational use only. Do not use it on systems you do not have explicit permission to test. The authors are not responsible for misuse.
@@ -34,7 +47,7 @@ git clone https://github.com/NerdTIV/MeshBreaker.git
 cd MeshBreaker
 ```
 
-2) Create and activate a virtual environment:
+2) (Optional) Create and activate a virtual environment:
 ```bash
 python -m venv .venv
 ```
@@ -112,7 +125,7 @@ cd src/firmware_analysis/
 python crypto_key_extractor.py /path/to/firmware.bin
 ```
 
-### Network Hardware fuzzing 
+### Network Hardware fuzzing
 Fuzzes exposed hardware interfaces over the network (UART, SPI, I2C gateways).
 
 ```bash

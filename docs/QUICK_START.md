@@ -4,6 +4,7 @@
 
 1.  **Install Dependencies**
 
+    (Optional) Virtual environment:
     ```bash
     python -m venv .venv
     ```
