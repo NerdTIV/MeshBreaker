@@ -16,13 +16,18 @@ fi
 echo "Installing system dependencies..."
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     sudo apt-get update
-    sudo apt-get install -y bluez python3-bluez libbluetooth-dev python3-pip python3-venv
+    sudo apt-get install -y bluez bluez-tools bluetooth libbluetooth-dev libglib2.0-dev pkg-config build-essential python3-dev python3-pip python3-venv
+    if command -v systemctl &> /dev/null; then
+        sudo systemctl enable --now bluetooth || true
+    else
+        echo "systemctl not found; start bluetooth service manually if needed."
+    fi
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     if ! command -v brew &> /dev/null; then
         echo "Homebrew not found. Please install it from https://brew.sh"
         exit 1
     fi
-    brew install bluez python3
+    brew install python3
 fi
 
 echo "Setting up Python virtual environment..."
