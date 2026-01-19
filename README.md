@@ -47,7 +47,7 @@ git clone https://github.com/NerdTIV/MeshBreaker.git
 cd MeshBreaker
 ```
 
-- (Optional) Create and activate a virtual environment !
+- (Optional) Create and activate a virtual environment :
 Linux/macOS:
 ```bash
 python -m venv .venv
