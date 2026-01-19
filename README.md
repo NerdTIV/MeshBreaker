@@ -1,4 +1,4 @@
-# MeshBreaker BLE Suite
+# MeshBreaker
 
 ## Disclaimer
 
@@ -48,45 +48,53 @@ sudo setcap cap_net_raw+eip $(which python3)
 
 ## Quick Start
 
-All tools live under `src/script/`.
+All tools live under `src/`.
 
 ### Enumerate BLE devices
+Scans BLE devices and enumerates GATT services and characteristics.
+
 ```bash
-cd src/script/radio_fuzzing/
+cd src/radio_fuzzing/
 python ble_service_enumerator.py --scan --backend bleak
 python ble_service_enumerator.py -t AA:BB:CC:DD:EE:FF --backend bleak
 ```
 
-### GATT fuzzing (PC adapter with Bleak)
+### BLE packet sniffing
+Captures BLE traffic and writes PCAP output (best on Linux with Scapy).
+
 ```bash
-cd src/script/radio_fuzzing/
+cd src/radio_fuzzing/
+python ble_packet_sniffer.py -o capture.pcap -d 60
+```
+
+### GATT fuzzing (PC adapter with Bleak)
+Sends malformed BLE traffic to test target stack robustness.
+
+```bash
+cd src/radio_fuzzing/
 python ble_radio_fuzzer.py --device pc --backend bleak --target AA:BB:CC:DD:EE:FF
 ```
 
 ### Firmware analysis
+Scans firmware binaries for potential keys, secrets, and certificates.
+
 ```bash
-cd src/script/firmware_analysis/
+cd src/firmware_analysis/
 python crypto_key_extractor.py /path/to/firmware.bin
 ```
 
 ### Hardware fuzzing (if network-accessible)
+Fuzzes exposed hardware interfaces over the network (UART, SPI, I2C gateways).
+
 ```bash
-cd src/script/hardware_exploitation/
+cd src/hardware_exploitation/
 python hardware_fuzzer.py -t 192.168.1.100 -p 8888
 ```
-
-## Tools Included
-
-- `ble_service_enumerator.py`: Scans for BLE devices and enumerates GATT services.
-- `ble_packet_sniffer.py`: Captures BLE traffic to PCAP using Scapy (Linux); use `--scan` cross-platform.
-- `ble_radio_fuzzer.py`: Sends malformed BLE packets; PC adapters can use Bleak for GATT fuzzing.
-- `crypto_key_extractor.py`: Scans firmware for cryptographic keys and credentials.
-- `hardware_fuzzer.py`: Fuzzes UART, SPI, and I2C endpoints.
 
 ## Project Layout
 
 ```
-src/script/
+src/
   radio_fuzzing/
   firmware_analysis/
   hardware_exploitation/
@@ -103,3 +111,6 @@ docs/
 ## License
 
 MIT License. See `LICENSE`.
+
+
+
