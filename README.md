@@ -47,12 +47,10 @@ git clone https://github.com/NerdTIV/MeshBreaker.git
 cd MeshBreaker
 ```
 
-2) (Optional) Create and activate a virtual environment:
-```bash
-python -m venv .venv
-```
+- (Optional) Create and activate a virtual environment !
 Linux/macOS:
 ```bash
+python -m venv .venv
 source .venv/bin/activate
 ```
 Windows (PowerShell):
@@ -60,7 +58,7 @@ Windows (PowerShell):
 .\.venv\Scripts\Activate.ps1
 ```
 
-3) Install dependencies:
+2) Install dependencies:
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -76,7 +74,7 @@ Optional hardware extras:
 pip install .[hardware]
 ```
 
-4) Platform setup:
+3) Platform setup:
 - Linux:
 ```bash
 sudo apt-get install bluez bluez-tools bluetooth libbluetooth-dev libglib2.0-dev pkg-config build-essential python3-dev
