@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 
 from setuptools import setup, find_packages
 import os
@@ -41,18 +41,20 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "ble-sniffer=script.radio_fuzzing.ble_packet_sniffer:main",
-            "ble-enum=script.radio_fuzzing.ble_service_enumerator:main",
-            "ble-fuzz=script.radio_fuzzing.ble_radio_fuzzer:main",
-            "hw-fuzz=script.hardware_exploitation.hardware_fuzzer:main",
-            "crypto-extract=script.firmware_analysis.crypto_key_extractor:main",
+            "ble-sniffer=radio_fuzzing.ble_packet_sniffer:main",
+            "ble-enum=radio_fuzzing.ble_service_enumerator:main",
+            "ble-fuzz=radio_fuzzing.ble_radio_fuzzer:main",
+            "hw-fuzz=hardware_exploitation.hardware_fuzzer:main",
+            "crypto-extract=firmware_analysis.crypto_key_extractor:main",
         ],
     },
     project_urls={
-        "Bug Reports": "https://github.com/user/MeshBreaker/issues",
-        "Source": "https://github.com/user/MeshBreaker",
+        "Bug Reports": "https://github.com/NerdTIV/MeshBreaker/issues",
+        "Source": "https://github.com/NerdTIV/MeshBreaker",
     },
     keywords="ble bluetooth fuzzing security hardware firmware",
     include_package_data=True,
     zip_safe=False,
 )
+
+

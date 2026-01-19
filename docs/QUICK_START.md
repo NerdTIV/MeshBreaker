@@ -1,4 +1,4 @@
-# Quick Start
+﻿# Quick Start
 
 ## Installation
 
@@ -24,7 +24,7 @@
 
 ## Basic Usage
 
-The tools are located in `src/script/`.
+The tools are located in `src/`.
 
 ### Radio Fuzzing
 
@@ -32,7 +32,7 @@ These tools interact with live BLE devices over the air.
 
 1.  **Scan for devices:**
     ```bash
-    cd src/script/radio_fuzzing/
+    cd src/radio_fuzzing/
     sudo python ble_service_enumerator.py --scan
     ```
 
@@ -57,13 +57,13 @@ These tools perform static analysis on firmware or fuzz exposed hardware interfa
 
 1.  **Extract secrets from a firmware binary:**
     ```bash
-    cd src/script/firmware_analysis/
+    cd src/firmware_analysis/
     python crypto_key_extractor.py /path/to/firmware.bin
     ```
 
 2.  **Fuzz a network-accessible hardware interface:**
     ```bash
-    cd src/script/hardware_exploitation/
+    cd src/hardware_exploitation/
     python hardware_fuzzer.py -t 192.168.1.50 -p 8888
     ```
 
@@ -72,3 +72,4 @@ These tools perform static analysis on firmware or fuzz exposed hardware interfa
 -   **Permission Denied:** Most radio-related scripts require `sudo` to access Bluetooth hardware.
 -   **bluepy not found:** Ensure you have installed the `bluepy` package and the system dependencies (`python3-bluez`, `libbluetooth-dev`) on Linux.
 -   **No Devices Found:** Make sure your system's Bluetooth is enabled and the `hci` interface is up. You can check with `hciconfig`.
+
