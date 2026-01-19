@@ -22,24 +22,52 @@ MeshBreaker is a toolkit for BLE protocol testing and firmware analysis. It incl
 - Python 3.7+
 - Optional: Npcap on Windows for Scapy-based sniffing
 - Optional: External radios (nRF52840 dongle, Ubertooth) for raw packet injection
+- Optional: `pyserial` for local UART fuzzing
+- Optional: `pyftdi` for FTDI-based I2C/SPI adapters
+- Optional (Linux): `smbus2` and `spidev` for native I2C/SPI access
 
 ## Installation
 
 1) Clone the repository:
 ```bash
-git clone https://github.com/yourusername/MeshBreaker.git
+git clone https://github.com/NerdTIV/MeshBreaker.git
 cd MeshBreaker
 ```
 
-2) Install dependencies:
+2) Create and activate a virtual environment:
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+```
+Linux/macOS:
+```bash
+source .venv/bin/activate
+```
+Windows (PowerShell):
+```powershell
+.\.venv\Scripts\Activate.ps1
 ```
 
-3) Platform setup:
+3) Install dependencies:
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+Linux full setup (system packages + Python deps):
+```bash
+bash tools/INSTALL.sh
+```
+
+Optional hardware extras:
+```bash
+pip install .[hardware]
+```
+
+4) Platform setup:
 - Linux:
 ```bash
-sudo apt-get install bluez python3-bluez libbluetooth-dev
+sudo apt-get install bluez bluez-tools bluetooth libbluetooth-dev libglib2.0-dev pkg-config build-essential python3-dev
+sudo systemctl enable --now bluetooth
 sudo setcap cap_net_raw+eip $(which python3)
 ```
 - Windows:
@@ -49,6 +77,7 @@ sudo setcap cap_net_raw+eip $(which python3)
 ## Quick Start
 
 All tools live under `src/`.
+For best results (especially BLE radio access and sniffing), run the tools as Administrator/root (sudo).
 
 ### Enumerate BLE devices
 Scans BLE devices and enumerates GATT services and characteristics.
@@ -67,7 +96,7 @@ cd src/radio_fuzzing/
 python ble_packet_sniffer.py -o capture.pcap -d 60
 ```
 
-### GATT fuzzing (PC adapter with Bleak)
+### GATT fuzzing
 Sends malformed BLE traffic to test target stack robustness.
 
 ```bash
@@ -83,12 +112,20 @@ cd src/firmware_analysis/
 python crypto_key_extractor.py /path/to/firmware.bin
 ```
 
-### Hardware fuzzing (if network-accessible)
+### Network Hardware fuzzing 
 Fuzzes exposed hardware interfaces over the network (UART, SPI, I2C gateways).
 
 ```bash
 cd src/hardware_exploitation/
-python hardware_fuzzer.py -t 192.168.1.100 -p 8888
+python network_to_hardware_fuzz.py -t 127.0.XXX.XXX -p XXXX
+```
+
+### Physical hardware fuzzing
+Targets local adapters (USB-UART, USB-I2C, USB-SPI). Use the `uart`, `i2c`, or `spi` subcommands.
+
+```bash
+cd src/hardware_exploitation/
+python physical_hardware_fuzz.py --help
 ```
 
 ## Troubleshooting

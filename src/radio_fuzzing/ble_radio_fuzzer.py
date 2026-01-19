@@ -117,23 +117,65 @@ class BLERadioFuzzer:
 
     def _scan_with_bleak(self, timeout: int) -> List[dict]:
         async def _scan():
-            return await BleakScanner.discover(timeout=timeout)
+            try:
+                return await BleakScanner.discover(timeout=timeout, return_adv=True)
+            except TypeError:
+                return await BleakScanner.discover(timeout=timeout)
 
-        devices = self._run_async(_scan())
+        results = self._run_async(_scan())
         found_devices = []
-        for dev in devices:
-            metadata = dev.metadata or {}
-            uuids = metadata.get("uuids", []) or []
+        if isinstance(results, dict):
+            items = results.values()
+        else:
+            items = results or []
+
+        for item in items:
+            if isinstance(item, tuple) and len(item) == 2:
+                dev, adv = item
+            else:
+                dev, adv = item, None
+
+            if dev is None:
+                continue
+
+            metadata = getattr(dev, "metadata", None) or {}
+            name = dev.name or metadata.get("name") or "Unknown"
+
+            uuids = []
+            manufacturer_data = None
+            if adv is not None:
+                if hasattr(adv, "service_uuids") and adv.service_uuids:
+                    uuids = list(adv.service_uuids)
+                elif isinstance(adv, dict):
+                    uuids = adv.get("service_uuids", []) or adv.get("uuids", []) or []
+                if hasattr(adv, "manufacturer_data") and adv.manufacturer_data:
+                    manufacturer_data = adv.manufacturer_data
+                elif isinstance(adv, dict):
+                    manufacturer_data = adv.get("manufacturer_data", {})
+            if not uuids:
+                uuids = metadata.get("service_uuids", []) or metadata.get("uuids", []) or []
+            if manufacturer_data is None:
+                manufacturer_data = metadata.get("manufacturer_data", {}) or {}
+
             manufacturer = "Unknown"
-            manufacturer_data = metadata.get("manufacturer_data", {})
             if manufacturer_data:
-                company_id = sorted(manufacturer_data.keys())[0]
-                manufacturer = f"CompanyID {company_id:04X}"
+                try:
+                    company_id = sorted(manufacturer_data.keys())[0]
+                except Exception:
+                    company_id = None
+                if company_id is not None:
+                    manufacturer = f"CompanyID {company_id:04X}"
+            rssi = getattr(dev, "rssi", None)
+            if rssi is None and adv is not None:
+                rssi = getattr(adv, "rssi", None)
+                if rssi is None and isinstance(adv, dict):
+                    rssi = adv.get("rssi")
+
             found_devices.append({
                 'addr': dev.address,
                 'addr_type': 'public',
-                'name': dev.name or 'Unknown',
-                'rssi': dev.rssi,
+                'name': name,
+                'rssi': rssi,
                 'services': uuids,
                 'manufacturer': manufacturer
             })
@@ -168,11 +210,21 @@ class BLERadioFuzzer:
             logger.info(f"    {dev['addr']} - {dev['name']} (RSSI: {dev['rssi']} dBm)")
         return devices
 
-    def select_target_from_scan(self, timeout: int = 10) -> Optional[str]:
+    def select_target_from_scan(self, timeout: int = 10, exclude_names: Optional[List[str]] = None) -> Optional[str]:
         devices = self.scan_ble_devices(timeout=timeout)
         if not devices:
             logger.warning("No devices found")
             return None
+        if exclude_names:
+            excluded = []
+            for dev in devices:
+                name = (dev.get("name") or "").lower()
+                if name and any(excl in name for excl in exclude_names):
+                    excluded.append(dev)
+            if excluded and len(excluded) == len(devices):
+                logger.warning("All devices matched --exclude-name; ignoring exclusion.")
+            else:
+                devices = [dev for dev in devices if dev not in excluded]
         print("\nSelect a target to fuzz:")
         for idx, dev in enumerate(devices, start=1):
             name = dev.get('name') or 'Unknown'
@@ -243,7 +295,7 @@ class BLERadioFuzzer:
         logger.info(f"Generated {len(fuzzing_cases)} GATT packets")
         return fuzzing_cases
 
-    def _gatt_fuzz_payloads(self) -> List[Tuple[str, bytes]]:
+    def _gatt_fuzz_payloads(self, max_len: Optional[int] = None) -> List[Tuple[str, bytes]]:
         payloads = [
             ("zero_length", b""),
             ("one_null", b"\x00"),
@@ -259,20 +311,100 @@ class BLERadioFuzzer:
             ("random_64", bytes([random.randint(0, 255) for _ in range(64)])),
             ("random_256", bytes([random.randint(0, 255) for _ in range(256)])),
         ]
-        return payloads
+        if max_len is None:
+            return payloads
+        return [(name, data) for name, data in payloads if len(data) <= max_len]
 
-    def fuzz_gatt_via_bleak(self, target_addr: str, timeout: int = 10) -> int:
+    async def _probe_max_len(
+        self,
+        client: "BleakClient",
+        char_uuid: str,
+        response: bool,
+        max_len: int,
+        delay: float,
+    ) -> Optional[int]:
+        if max_len < 1:
+            return None
+
+        last_ok = 0
+        last_fail: Optional[int] = None
+
+        size = 1
+        while size <= max_len:
+            try:
+                await client.write_gatt_char(char_uuid, b"\x00" * size, response=response)
+                last_ok = size
+                await asyncio.sleep(delay)
+                size *= 2
+            except Exception as e:
+                logger.info(f"Max length hit at {size} for {char_uuid}: {e}")
+                last_fail = size
+                await asyncio.sleep(delay)
+                break
+
+        if last_ok == 0:
+            return None
+
+        if last_fail is None:
+            if last_ok < max_len:
+                try:
+                    await client.write_gatt_char(char_uuid, b"\x00" * max_len, response=response)
+                    await asyncio.sleep(delay)
+                    return max_len
+                except Exception as e:
+                    logger.info(f"Max length hit at {max_len} for {char_uuid}: {e}")
+                    last_fail = max_len
+            else:
+                return last_ok
+
+        if last_fail is None:
+            return last_ok
+
+        low = last_ok + 1
+        high = last_fail - 1
+        while low <= high:
+            mid = (low + high) // 2
+            try:
+                await client.write_gatt_char(char_uuid, b"\x00" * mid, response=response)
+                last_ok = mid
+                low = mid + 1
+                await asyncio.sleep(delay)
+            except Exception:
+                high = mid - 1
+                await asyncio.sleep(delay)
+
+        return last_ok
+
+    def fuzz_gatt_via_bleak(
+        self,
+        target_addr: str,
+        timeout: int = 10,
+        delay: float = 0.05,
+        probe_delay: float = 30.0,
+        discover_max_len: bool = False,
+        max_len: int = 512,
+    ) -> int:
         if not BLEAK_AVAILABLE:
             logger.error("Bleak not available. Install: pip install bleak")
             return 0
 
         async def _fuzz():
             logger.info("Starting GATT fuzzing via Bleak")
+            logger.info(f"Connecting to {target_addr}...")
             try:
                 async with BleakClient(target_addr, timeout=timeout) as client:
                     logger.info("Connected successfully")
-                    services = await client.get_services()
-                    payloads = self._gatt_fuzz_payloads()
+                    services = None
+                    if hasattr(client, "get_services"):
+                        try:
+                            services = await client.get_services()
+                        except Exception as e:
+                            logger.debug(f"Bleak get_services failed: {e}")
+                    if services is None:
+                        services = getattr(client, "services", None)
+                    if services is None:
+                        logger.error("Service discovery failed.")
+                        return 0
                     total_cases = 0
                     writable_chars = 0
                     for service in services:
@@ -283,6 +415,23 @@ class BLERadioFuzzer:
                                 continue
                             writable_chars += 1
                             response = "write" in props
+                            discovered_len = None
+                            if discover_max_len:
+                                logger.info(f"Probing max write length for {char.uuid}...")
+                                discovered_len = await self._probe_max_len(
+                                    client,
+                                    char.uuid,
+                                    response,
+                                    max_len,
+                                    probe_delay,
+                                )
+                                if discovered_len is not None:
+                                    logger.info(f"Max write length for {char.uuid}: {discovered_len}")
+                                else:
+                                    logger.warning(f"Could not determine max write length for {char.uuid}")
+                                    continue
+
+                            payloads = self._gatt_fuzz_payloads(max_len=discovered_len)
                             for case_name, payload in payloads:
                                 try:
                                     await client.write_gatt_char(char.uuid, payload, response=response)
@@ -290,12 +439,13 @@ class BLERadioFuzzer:
                                 except Exception as e:
                                     logger.warning(f"Write failed {case_name} to {char.uuid}: {e}")
                                 total_cases += 1
+                                await asyncio.sleep(delay)
                     logger.info("GATT fuzzing summary")
                     logger.info(f"Writable characteristics tested: {writable_chars}")
                     logger.info(f"Total write attempts: {total_cases}")
                     return total_cases
-            except Exception as e:
-                logger.error(f"GATT fuzzing failed: {e}")
+            except Exception:
+                logger.exception("GATT fuzzing failed")
                 return 0
 
         return self._run_async(_fuzz())
@@ -341,8 +491,53 @@ class BLERadioFuzzer:
         time.sleep(0.01)
         return True
 
-    def run_fuzzing_campaign(self, target_addr: str):
+    def run_fuzzing_campaign(
+        self,
+        target_addr: Optional[str],
+        delay: float = 0.05,
+        probe_delay: float = 5.0,
+        discover_max_len: bool = False,
+        max_len: int = 512,
+        scan_timeout: int = 15,
+        auto_select: bool = False,
+        prefer_name: Optional[str] = None,
+        exclude_names: Optional[List[str]] = None,
+    ):
         logger.info("Starting BLE radio fuzzing campaign")
+        if auto_select or not target_addr:
+            devices = self.scan_ble_devices(timeout=scan_timeout)
+            if not devices:
+                logger.warning("No devices found")
+                return
+            filtered_devices = devices
+            if exclude_names:
+                excluded = []
+                for dev in devices:
+                    name = (dev.get("name") or "").lower()
+                    if name and any(excl in name for excl in exclude_names):
+                        excluded.append(dev)
+                if excluded and len(excluded) == len(devices):
+                    logger.warning("All devices matched --exclude-name; ignoring exclusion.")
+                else:
+                    filtered_devices = [dev for dev in devices if dev not in excluded]
+
+            selected = None
+            if prefer_name:
+                prefer_lower = prefer_name.lower()
+                for dev in filtered_devices:
+                    name = (dev.get("name") or "").lower()
+                    if prefer_lower in name:
+                        selected = dev
+                        break
+            if selected is None:
+                devices_sorted = sorted(
+                    filtered_devices,
+                    key=lambda d: (d.get("rssi") is None, -(d.get("rssi") or -9999)),
+                )
+                selected = devices_sorted[0]
+            target_addr = selected.get("addr")
+            logger.info(f"Auto-selected target: {target_addr} ({selected.get('name')})")
+
         logger.info(f"Target: {target_addr}")
         if not self.init_hardware():
             logger.error("Failed to initialize hardware")
@@ -352,7 +547,13 @@ class BLERadioFuzzer:
             if backend != "bleak":
                 logger.error("PC GATT fuzzing requires Bleak. Use --backend bleak or install bleak.")
                 return
-            self.fuzz_gatt_via_bleak(target_addr)
+            self.fuzz_gatt_via_bleak(
+                target_addr,
+                delay=delay,
+                probe_delay=probe_delay,
+                discover_max_len=discover_max_len,
+                max_len=max_len,
+            )
             return
         devices = self.scan_ble_devices()
         if not devices:
@@ -386,8 +587,15 @@ def main():
     parser.add_argument('-t', '--target', help='Target BLE address')
     parser.add_argument('-s', '--scan', action='store_true', help='Scan for devices first')
     parser.add_argument('--scan-select', action='store_true', help='Scan and select a target to fuzz')
-    parser.add_argument('--scan-timeout', type=int, default=10, help='Scan duration in seconds')
+    parser.add_argument('--scan-timeout', type=int, default=15, help='Scan duration in seconds')
     parser.add_argument('--backend', default='auto', choices=['auto', 'bleak', 'sim'], help='Backend selection (scan/GATT)')
+    parser.add_argument('--delay', type=float, default=0.05, help='Delay between payloads (seconds)')
+    parser.add_argument('--probe-delay', type=float, default=15.0, help='Delay between length probe attempts (seconds)')
+    parser.add_argument('--discover-max-len', action='store_true', help='Probe max write length before fuzzing')
+    parser.add_argument('--max-len', type=int, default=512, help='Max length to probe during discovery')
+    parser.add_argument('--scan-connect', action='store_true', help='Scan and auto-connect to best target')
+    parser.add_argument('--prefer-name', help='Preferred name substring when auto-connecting')
+    parser.add_argument('--exclude-name', help='Comma-separated name substrings to exclude when auto-connecting')
     args = parser.parse_args()
 
     fuzzer = BLERadioFuzzer(device_type=args.device, backend=args.backend)
@@ -396,17 +604,39 @@ def main():
     if args.scan_select:
         if not fuzzer.init_hardware():
             return
-        target = fuzzer.select_target_from_scan(timeout=args.scan_timeout)
+        exclude_names = None
+        if args.exclude_name:
+            exclude_names = [part.strip().lower() for part in args.exclude_name.split(",") if part.strip()]
+        target = fuzzer.select_target_from_scan(timeout=args.scan_timeout, exclude_names=exclude_names)
         if target:
-            fuzzer.run_fuzzing_campaign(target)
+            fuzzer.run_fuzzing_campaign(
+                target,
+                delay=args.delay,
+                probe_delay=args.probe_delay,
+                discover_max_len=args.discover_max_len,
+                max_len=args.max_len,
+            )
         else:
             logger.info("No target selected")
     elif args.scan:
         if not fuzzer.init_hardware():
             return
         fuzzer.scan_ble_devices(timeout=args.scan_timeout)
-    elif args.target:
-        fuzzer.run_fuzzing_campaign(args.target)
+    elif args.target or args.scan_connect:
+        exclude_names = None
+        if args.exclude_name:
+            exclude_names = [part.strip().lower() for part in args.exclude_name.split(",") if part.strip()]
+        fuzzer.run_fuzzing_campaign(
+            args.target,
+            delay=args.delay,
+            probe_delay=args.probe_delay,
+            discover_max_len=args.discover_max_len,
+            max_len=args.max_len,
+            scan_timeout=args.scan_timeout,
+            auto_select=args.scan_connect,
+            prefer_name=args.prefer_name,
+            exclude_names=exclude_names,
+        )
     else:
         parser.error("Target address required unless --scan or --scan-select is used")
 

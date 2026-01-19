@@ -125,26 +125,70 @@ class BLEServiceEnumerator:
 
     def _scan_devices_bleak(self, timeout: int = 10) -> List[Dict]:
         async def _scan():
-            return await BleakScanner.discover(timeout=timeout)
+            try:
+                return await BleakScanner.discover(timeout=timeout, return_adv=True)
+            except TypeError:
+                return await BleakScanner.discover(timeout=timeout)
 
-        devices = self._run_async(_scan())
+        results = self._run_async(_scan())
         found_devices = []
-        for dev in devices:
-            metadata = dev.metadata or {}
+
+        if isinstance(results, dict):
+            items = results.values()
+        else:
+            items = results or []
+
+        for item in items:
+            if isinstance(item, tuple) and len(item) == 2:
+                dev, adv = item
+            else:
+                dev, adv = item, None
+
+            if dev is None:
+                continue
+
+            metadata = getattr(dev, "metadata", None) or {}
+            name = dev.name or metadata.get("name") or "Unknown"
+
+            service_uuids = []
+            if adv is not None:
+                if hasattr(adv, "service_uuids") and adv.service_uuids:
+                    service_uuids = list(adv.service_uuids)
+                elif isinstance(adv, dict):
+                    service_uuids = adv.get("service_uuids", []) or adv.get("uuids", []) or []
+            if not service_uuids:
+                service_uuids = metadata.get("service_uuids", []) or metadata.get("uuids", []) or []
+
+            rssi = getattr(dev, "rssi", None)
+            if rssi is None and adv is not None:
+                rssi = getattr(adv, "rssi", None)
+                if rssi is None and isinstance(adv, dict):
+                    rssi = adv.get("rssi")
+
+            connectable = True
+            if adv is not None:
+                if hasattr(adv, "connectable"):
+                    connectable = bool(adv.connectable)
+                elif isinstance(adv, dict) and "connectable" in adv:
+                    connectable = bool(adv.get("connectable"))
+
             device_info = {
                 'addr': dev.address,
                 'addr_type': 'public',
-                'rssi': dev.rssi,
-                'connectable': True,
+                'rssi': rssi,
+                'connectable': connectable,
                 'scan_data': {
-                    'name': dev.name or 'Unknown',
-                    'uuids': metadata.get("uuids", []) or []
+                    'name': name,
+                    'uuids': service_uuids
                 }
             }
             found_devices.append(device_info)
-            logger.info(f"  {dev.address} (public) RSSI={dev.rssi}")
-            if device_info['scan_data'].get('name') and device_info['scan_data']['name'] != 'Unknown':
-                logger.info(f"    Name: {device_info['scan_data']['name']}")
+
+            rssi_display = rssi if rssi is not None else "N/A"
+            logger.info(f"  {dev.address} (public) RSSI={rssi_display}")
+            if name and name != "Unknown":
+                logger.info(f"    Name: {name}")
+
         return found_devices
 
     def _run_full_enumeration_bleak(self, export_json: str = None) -> bool:
@@ -153,7 +197,17 @@ class BLEServiceEnumerator:
             try:
                 async with BleakClient(self.target_addr) as client:
                     logger.info("Connected successfully")
-                    services = await client.get_services()
+                    services = None
+                    if hasattr(client, "get_services"):
+                        try:
+                            services = await client.get_services()
+                        except Exception as e:
+                            logger.debug(f"Bleak get_services failed: {e}")
+                    if services is None:
+                        services = getattr(client, "services", None)
+                    if services is None:
+                        logger.error("Service discovery failed.")
+                        return False
             except Exception as e:
                 logger.error(f"Connection failed: {e}")
                 return False
@@ -457,6 +511,7 @@ def main():
         epilog="""Examples:\n  sudo python ble_service_enumerator.py --scan\n  sudo python ble_service_enumerator.py -t AA:BB:CC:DD:EE:FF\n  python ble_service_enumerator.py --scan --backend bleak"""
     )
     parser.add_argument('--scan', action='store_true', help='Scan for BLE devices')
+    parser.add_argument('--scan-timeout', type=int, default=15, help='Scan duration in seconds')
     parser.add_argument('-t', '--target', help='Target BLE address (AA:BB:CC:DD:EE:FF)')
     parser.add_argument('-a', '--addr-type', default='public', choices=['public', 'random'], help='Address type (default: public)')
     parser.add_argument('-o', '--output', help='Export to JSON file')
@@ -472,7 +527,7 @@ def main():
     if args.scan:
         enumerator = BLEServiceEnumerator("00:00:00:00:00:00", backend=args.backend)
         require_root_if_needed(enumerator.backend)
-        devices = enumerator.scan_devices(timeout=10)
+        devices = enumerator.scan_devices(timeout=args.scan_timeout)
         print(f"\nFound {len(devices)} device(s)")
         print("\nTo enumerate a device, run:")
         cmd_prefix = "sudo python" if enumerator.backend == "bluepy" else "python"
