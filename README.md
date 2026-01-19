@@ -91,17 +91,6 @@ cd src/hardware_exploitation/
 python hardware_fuzzer.py -t 192.168.1.100 -p 8888
 ```
 
-## Project Layout
-
-```
-src/
-  radio_fuzzing/
-  firmware_analysis/
-  hardware_exploitation/
-tests/
-docs/
-```
-
 ## Troubleshooting
 
 - Windows BLE tools: use `--backend bleak` with a standard adapter.
@@ -111,6 +100,3 @@ docs/
 ## License
 
 MIT License. See `LICENSE`.
-
-
-
