@@ -1,0 +1,323 @@
+{
+  "version": "1.0",
+  "rtos": [
+    {
+      "id": "freertos",
+      "name": "FreeRTOS",
+      "vendor": "Amazon / FreeRTOS.org",
+      "typical_arch": ["arm32", "arm64", "mips", "xtensa", "avr", "riscv"],
+      "cve_tags": ["freertos"],
+      "patterns": [
+        "FreeRTOS", "xTaskCreate", "vTaskDelay", "vTaskStartScheduler",
+        "prvIdleTask", "configUSE_PREEMPTION", "INCLUDE_vTaskDelay",
+        "uxTaskGetStackHighWaterMark", "xQueueCreate", "TCB_t"
+      ]
+    },
+    {
+      "id": "vxworks",
+      "name": "VxWorks",
+      "vendor": "Wind River",
+      "typical_arch": ["arm32", "arm64", "mips", "ppc", "x86"],
+      "cve_tags": ["vxworks", "urgent11"],
+      "patterns": [
+        "VxWorks", "Wind River", "taskSpawn", "sysClkConnect",
+        "WIND_TCB", "_vxworks", "kernelInit", "usrAppInit",
+        "vxWorksVersion", "taskLib", "semMCreate"
+      ]
+    },
+    {
+      "id": "zephyr",
+      "name": "Zephyr RTOS",
+      "vendor": "Linux Foundation",
+      "typical_arch": ["arm32", "arm64", "riscv", "xtensa", "x86"],
+      "cve_tags": ["zephyr"],
+      "patterns": [
+        "Zephyr", "k_thread_create", "k_mutex_lock", "k_sem_give",
+        "CONFIG_KERNEL_BIN_NAME", "zephyr_", "CONFIG_BT_MESH",
+        "z_thread_entry", "CONFIG_NUM_COOP_PRIORITIES"
+      ]
+    },
+    {
+      "id": "threadx",
+      "name": "ThreadX / Azure RTOS",
+      "vendor": "Microsoft / Express Logic",
+      "typical_arch": ["arm32", "arm64", "mips", "x86"],
+      "cve_tags": ["threadx", "azure_rtos"],
+      "patterns": [
+        "ThreadX", "tx_thread_create", "Azure RTOS", "_tx_thread",
+        "tx_mutex_create", "tx_semaphore_create", "tx_event_flags",
+        "_txe_thread_create", "TX_THREAD"
+      ]
+    },
+    {
+      "id": "ucos",
+      "name": "Micrium µC/OS",
+      "vendor": "Micrium / Silicon Labs",
+      "typical_arch": ["arm32", "mips", "avr"],
+      "cve_tags": ["ucos", "micrium"],
+      "patterns": [
+        "uC/OS", "OSTaskCreate", "OSTimeDly", "OSStart",
+        "Micrium", "OSMutexCreate", "OSSemCreate", "OS_TCB",
+        "OSTimeDlyHMSM", "OS_TASK_SW"
+      ]
+    },
+    {
+      "id": "rtems",
+      "name": "RTEMS",
+      "vendor": "OAR Corporation / rtems.org",
+      "typical_arch": ["arm32", "arm64", "mips", "ppc", "x86", "sparc"],
+      "cve_tags": ["rtems"],
+      "patterns": [
+        "RTEMS", "rtems_task_create", "rtems_clock", "_RTEMS_",
+        "rtems_semaphore", "rtems_interrupt", "RTEMS_SYSINIT",
+        "rtems_build_name", "rtems_task_wake_after"
+      ]
+    },
+    {
+      "id": "mbed",
+      "name": "Mbed OS",
+      "vendor": "Arm / Pelion",
+      "typical_arch": ["arm32", "arm64"],
+      "cve_tags": ["mbed"],
+      "patterns": [
+        "mbed", "MBED_", "ThisThread", "rtos::Mutex", "rtos::Thread",
+        "Thread::start", "EventFlags", "Mbed TLS", "mbedtls_",
+        "MBED_CONF_", "PlatformMutex"
+      ]
+    },
+    {
+      "id": "contiki",
+      "name": "Contiki / Contiki-NG",
+      "vendor": "contiki-ng.org",
+      "typical_arch": ["arm32", "msp430", "avr"],
+      "cve_tags": ["contiki"],
+      "patterns": [
+        "contiki", "PROCESS_BEGIN", "PROCESS_END", "etimer_set",
+        "process_post", "PROCESS_WAIT_EVENT", "ctimer_set",
+        "uip_", "sicslowpan", "contiki-ng"
+      ]
+    },
+    {
+      "id": "tinyos",
+      "name": "TinyOS",
+      "vendor": "tinyos.net",
+      "typical_arch": ["avr", "msp430", "arm32"],
+      "cve_tags": ["tinyos"],
+      "patterns": [
+        "TinyOS", "nesC", "TOS_NODE_ID", "AMSend", "Receive.receive",
+        "Boot.booted", "SplitControl", "TOS_AM_GROUP", "signal Boot"
+      ]
+    },
+    {
+      "id": "autosar",
+      "name": "AUTOSAR",
+      "vendor": "AUTOSAR consortium",
+      "typical_arch": ["arm32", "arm64", "ppc", "rh850"],
+      "cve_tags": ["autosar", "automotive"],
+      "patterns": [
+        "AUTOSAR", "Os_Task", "Rte_", "SchM_", "ComM_",
+        "Det_ReportError", "EcuM_", "BswM_", "CanIf_",
+        "Dcm_", "Dem_", "AUTOSAR_VERSION"
+      ]
+    },
+    {
+      "id": "linux_embedded",
+      "name": "Embedded Linux",
+      "vendor": "Various (OpenWrt, Yocto, Buildroot...)",
+      "typical_arch": ["arm32", "arm64", "mips", "x86_64", "riscv"],
+      "cve_tags": ["linux", "busybox"],
+      "patterns": [
+        "Linux version", "BusyBox", "OpenWrt", "/etc/passwd",
+        "init.d", "uClibc", "musl libc", "Yocto", "Buildroot",
+        "/proc/sys", "iptables", "opkg"
+      ]
+    },
+    {
+      "id": "bare_metal",
+      "name": "Bare Metal",
+      "vendor": "N/A",
+      "typical_arch": ["arm32", "avr", "msp430"],
+      "cve_tags": [],
+      "patterns": []
+    }
+  ],
+  "soc": [
+    {
+      "id": "nordic_nrf",
+      "name": "Nordic Semiconductor nRF5x",
+      "models": ["nRF51", "nRF52", "nRF53", "nRF9160"],
+      "arch": "arm32",
+      "typical_rtos": ["freertos", "zephyr", "mbed", "bare_metal"],
+      "cve_tags": ["nordic", "ble"],
+      "patterns": [
+        "nRF52", "nRF51", "nRF53", "SOFTDEVICE", "NRF_FICR",
+        "sd_softdevice_enable", "BLE_GAP", "NORDIC", "nrf_gpio",
+        "NRF_RADIO", "nrf_drv_", "nRF SDK"
+      ]
+    },
+    {
+      "id": "esp32",
+      "name": "Espressif ESP32 / ESP8266",
+      "models": ["ESP32", "ESP32-S2", "ESP32-S3", "ESP32-C3", "ESP8266"],
+      "arch": "xtensa / riscv",
+      "typical_rtos": ["freertos"],
+      "cve_tags": ["esp32", "espressif", "ble"],
+      "patterns": [
+        "ESP32", "esp-idf", "IDF_VER", "ESP8266", "Espressif",
+        "esp_wifi_", "esp_bt_", "nvs_open", "esp_log_",
+        "CONFIG_IDF_TARGET", "bootloader_init", "esp_ota_"
+      ]
+    },
+    {
+      "id": "stm32",
+      "name": "STMicroelectronics STM32",
+      "models": ["STM32F0", "STM32F1", "STM32F4", "STM32L4", "STM32H7", "STM32WB"],
+      "arch": "arm32",
+      "typical_rtos": ["freertos", "mbed", "bare_metal"],
+      "cve_tags": ["stm32"],
+      "patterns": [
+        "STM32", "HAL_Init", "SystemCoreClock", "STM32Cube",
+        "stm32", "HAL_GPIO_", "HAL_UART_", "HAL_SPI_",
+        "CMSIS", "__HAL_RCC_", "MX_GPIO_Init"
+      ]
+    },
+    {
+      "id": "ti_cc26xx",
+      "name": "Texas Instruments CC26xx / CC13xx",
+      "models": ["CC2640", "CC2642", "CC2652", "CC1352"],
+      "arch": "arm32",
+      "typical_rtos": ["freertos", "tinyos"],
+      "cve_tags": ["ti_cc26xx", "ble"],
+      "patterns": [
+        "CC2652", "CC2642", "CC2640", "CC26", "TIRTOS",
+        "RF_open", "rfMode", "Board_initGeneral", "ti_drivers",
+        "BLE_Stack", "ICall_", "SNP_", "ti.drivers"
+      ]
+    },
+    {
+      "id": "silabs_efr32",
+      "name": "Silicon Labs EFR32",
+      "models": ["EFR32BG", "EFR32MG", "EFR32FG", "BGM", "MGM"],
+      "arch": "arm32",
+      "typical_rtos": ["freertos", "ucos", "bare_metal"],
+      "cve_tags": ["silabs", "ble"],
+      "patterns": [
+        "EFR32", "RAIL_", "gecko_", "BGM", "MGM",
+        "Silicon Labs", "sl_bt_", "GLIB_", "emdrv",
+        "sl_status_", "sl_rail_", "BGAPI"
+      ]
+    },
+    {
+      "id": "nxp",
+      "name": "NXP Semiconductors",
+      "models": ["i.MX RT", "Kinetis", "LPC", "K64F"],
+      "arch": "arm32 / arm64",
+      "typical_rtos": ["freertos", "zephyr", "mbed"],
+      "cve_tags": ["nxp"],
+      "patterns": [
+        "MIMXRT", "MKL", "LPC", "i.MX", "NXP",
+        "FRDM", "fsl_", "CLOCK_EnableClock", "BOARD_Init",
+        "LPC_USART", "MCUXpresso", "SDK_DelayAtLeastUs"
+      ]
+    },
+    {
+      "id": "microchip",
+      "name": "Microchip / Atmel",
+      "models": ["SAMD", "SAME", "PIC32", "AVR", "ATmega"],
+      "arch": "arm32 / avr",
+      "typical_rtos": ["freertos", "bare_metal"],
+      "cve_tags": ["microchip"],
+      "patterns": [
+        "ATMEL", "Microchip", "SAMD", "ATSAM", "atmega",
+        "PIC32", "harmony_", "ASF", "SERCOM", "PORT_IOBUS",
+        "tc_get_config_defaults", "usart_get_config_defaults"
+      ]
+    },
+    {
+      "id": "qualcomm",
+      "name": "Qualcomm MDM / MSM",
+      "models": ["MDM9607", "MDM9205", "MSM8905"],
+      "arch": "arm32 / arm64",
+      "typical_rtos": ["linux_embedded", "threadx"],
+      "cve_tags": ["qualcomm", "modem"],
+      "patterns": [
+        "QCOM", "Qualcomm", "MDM", "MSM", "qcacld",
+        "AMSS", "modem_", "QMI_", "dsi_netctrl",
+        "DIAG", "Hexagon DSP"
+      ]
+    },
+    {
+      "id": "mediatek",
+      "name": "MediaTek MT76xx",
+      "models": ["MT7620", "MT7621", "MT7628", "MT7688"],
+      "arch": "mips",
+      "typical_rtos": ["linux_embedded"],
+      "cve_tags": ["mediatek"],
+      "patterns": [
+        "MediaTek", "MT76", "MTK", "ralink",
+        "RT3883", "MT7620", "mt76x2", "raeth"
+      ]
+    },
+    {
+      "id": "renesas",
+      "name": "Renesas",
+      "models": ["RL78", "RX", "RH850", "RA", "RZ"],
+      "arch": "renesas_rx / rh850 / arm32",
+      "typical_rtos": ["freertos", "rtems", "autosar", "bare_metal"],
+      "cve_tags": ["renesas"],
+      "patterns": [
+        "Renesas", "RL78", "RH850", "R7F", "r_cg_",
+        "R_SCI_", "R_BLE_", "FSP", "e2 studio",
+        "r_ioport_", "R_IOPORT_Open"
+      ]
+    },
+    {
+      "id": "infineon_psoc",
+      "name": "Infineon / Cypress PSoC",
+      "models": ["PSoC 4", "PSoC 6", "CYW43xx", "CYW20xxx"],
+      "arch": "arm32",
+      "typical_rtos": ["freertos", "mbed"],
+      "cve_tags": ["infineon", "cypress", "ble"],
+      "patterns": [
+        "CYW", "PSoC", "WICED", "Infineon", "Cypress",
+        "Cy_GPIO_", "Cy_SCB_", "cybsp_init", "CYHAL_",
+        "wiced_bt_", "cy_capsense_"
+      ]
+    },
+    {
+      "id": "raspberry_pi",
+      "name": "Raspberry Pi / Broadcom BCM",
+      "models": ["BCM2835", "BCM2711", "RP2040"],
+      "arch": "arm32 / arm64",
+      "typical_rtos": ["linux_embedded", "freertos"],
+      "cve_tags": ["raspberry_pi"],
+      "patterns": [
+        "Raspberry", "BCM2835", "BCM2711", "BCM2837",
+        "RP2040", "pico_sdk", "hardware_uart", "gpio_init",
+        "raspberrypi", "VideoCore"
+      ]
+    }
+  ],
+  "formats": [
+    {"id": "elf",         "name": "ELF",           "magic_hex": "7f454c46",         "offset": 0},
+    {"id": "gzip",        "name": "gzip",           "magic_hex": "1f8b",             "offset": 0},
+    {"id": "squashfs",    "name": "SquashFS",       "magic_hex": "73717368",         "offset": 0},
+    {"id": "jffs2",       "name": "JFFS2",          "magic_hex": "8519",             "offset": 0},
+    {"id": "ubifs",       "name": "UBIFS",          "magic_hex": "31181006",         "offset": 0},
+    {"id": "cramfs",      "name": "CramFS",         "magic_hex": "453dcd28",         "offset": 0},
+    {"id": "uboot",       "name": "U-Boot Image",   "magic_hex": "27051956",         "offset": 0},
+    {"id": "uboot_fit",   "name": "U-Boot FIT",     "magic_hex": "d00dfeed",         "offset": 0},
+    {"id": "bzip2",       "name": "bzip2",          "magic_hex": "425a68",           "offset": 0},
+    {"id": "xz",          "name": "XZ / LZMA2",    "magic_hex": "fd377a585a00",     "offset": 0},
+    {"id": "lzma",        "name": "LZMA",           "magic_hex": "5d000000",         "offset": 0},
+    {"id": "lz4",         "name": "LZ4",            "magic_hex": "04224d18",         "offset": 0},
+    {"id": "zstd",        "name": "Zstandard",      "magic_hex": "28b52ffd",         "offset": 0},
+    {"id": "cpio_newc",   "name": "CPIO (newc)",    "magic_ascii": "070701",         "offset": 0},
+    {"id": "uf2",         "name": "UF2 (RP2040…)",  "magic_hex": "55463202",         "offset": 0},
+    {"id": "ihex",        "name": "Intel HEX",      "magic_ascii": ":",              "offset": 0},
+    {"id": "srec",        "name": "Motorola S-Rec", "magic_ascii": "S0",             "offset": 0},
+    {"id": "pe",          "name": "PE/COFF",        "magic_hex": "4d5a",             "offset": 0},
+    {"id": "macho",       "name": "Mach-O",         "magic_hex": "cefaedfe",         "offset": 0},
+    {"id": "zlib",        "name": "zlib",           "magic_hex": "789c",             "offset": 0}
+  ]
+}

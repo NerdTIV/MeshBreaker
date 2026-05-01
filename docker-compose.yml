@@ -1,0 +1,33 @@
+services:
+
+  # ── Production (junior / end-user) ────────────────────────────────────────
+  # Use the installed `meshbreaker` wrapper instead of docker compose for this.
+  meshbreaker:
+    build: .
+    image: meshbreaker:latest
+    privileged: true
+    network_mode: host
+    volumes:
+      - /var/run/dbus:/var/run/dbus
+      - ./output:/app/output
+    stdin_open: true
+    tty: true
+
+  # ── Development (senior / contributor) ────────────────────────────────────
+  # Hot-reloads src/ changes without rebuilding the image.
+  # Mount a firmware dir with: FIRMWARE_DIR=/path/to/firmwares docker compose run dev firmware /firmware/fw.bin
+  dev:
+    build: .
+    image: meshbreaker:latest
+    privileged: true
+    network_mode: host
+    volumes:
+      - /var/run/dbus:/var/run/dbus
+      - ./output:/app/output
+      - ./src:/app/src                          # live code reload
+      - ./tests:/app/tests
+      - ${FIRMWARE_DIR:-/tmp}:/firmware:ro      # firmware mount (override with env var)
+    stdin_open: true
+    tty: true
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1

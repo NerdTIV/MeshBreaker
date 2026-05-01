@@ -1,91 +1,68 @@
-﻿# Quick Start
+# Quick Start
 
 ## Installation
 
-1.  **Install Dependencies**
+```bash
+git clone https://github.com/yourusername/MeshBreaker.git
+cd MeshBreaker
+bash install.sh
+```
 
-    (Optional) Virtual environment:
-    ```bash
-    python -m venv .venv
-    ```
-    Linux/macOS:
-    ```bash
-    source .venv/bin/activate
-    ```
-    Windows (PowerShell):
-    ```powershell
-    .\.venv\Scripts\Activate.ps1
-    ```
-    ```bash
-    python -m pip install --upgrade pip
-    python -m pip install -r requirements.txt
-    ```
+`install.sh` detects your package manager, installs Docker if it is not already present, builds the image, and adds `meshbreaker` to `~/.local/bin`.
 
-    Linux/macOS full setup (system packages + Python deps + venv):
-    ```bash
-    bash tools/INSTALL.sh
-    ```
-
-2.  **System Setup (Linux)**
-
-    ```bash
-    # Install Bluetooth libraries
-    sudo apt-get install bluez bluez-tools bluetooth libbluetooth-dev libglib2.0-dev pkg-config build-essential python3-dev
-    sudo systemctl enable --now bluetooth
-
-    # Grant network capture permissions to Python
-    sudo setcap cap_net_raw+eip $(which python3)
-    ```
-
-3.  **Hardware (for Radio Fuzzing)**
-
-    For over-the-air fuzzing, you need a supported radio device like an nRF52840 dongle or an Ubertooth One. Ensure its drivers and firmware are correctly installed.
+Restart your terminal, or run `source ~/.bashrc` / `source ~/.zshrc` to pick up the new command.
 
 ## Basic Usage
 
-The tools are located in `src/`.
-For best results (especially BLE radio access and sniffing), run the tools as Administrator/root (sudo).
+```bash
+# Scan for BLE devices nearby
+meshbreaker recon
 
-### Radio Fuzzing
+# Scan and fingerprint a specific target
+meshbreaker recon -t AA:BB:CC:DD:EE:FF
 
-These tools interact with live BLE devices over the air.
+# Enumerate GATT services on a target
+meshbreaker enumerate -t AA:BB:CC:DD:EE:FF
 
-1.  **Scan for devices:**
-    ```bash
-    python src/radio_fuzzing/ble_service_enumerator.py --scan --backend bleak
-    ```
+# Fuzz GATT characteristics
+meshbreaker fuzz --type gatt -t AA:BB:CC:DD:EE:FF
 
-2.  **Enumerate a specific target's services:**
-    ```bash
-    python src/radio_fuzzing/ble_service_enumerator.py -t AA:BB:CC:DD:EE:FF --backend bleak
-    ```
+# Fuzz L2CAP PSMs
+meshbreaker fuzz --type l2cap -t AA:BB:CC:DD:EE:FF
 
-3.  **Sniff traffic to a PCAP file:**
-    ```bash
-    python src/radio_fuzzing/ble_packet_sniffer.py -o capture.pcap -d 60
-    ```
+# Analyze a firmware binary
+meshbreaker firmware /path/to/firmware.bin
 
-4.  **Run the radio fuzzer against a target:**
-    ```bash
-    python src/radio_fuzzing/ble_radio_fuzzer.py --device pc --backend bleak --target AA:BB:CC:DD:EE:FF
-    ```
+# Passive capture (Ctrl-C to stop)
+meshbreaker capture --duration 60
 
-### Firmware & Hardware Analysis
+# Generate a report from the current session
+meshbreaker report --format html
+```
 
-These tools perform static analysis on firmware or fuzz exposed hardware interfaces.
+Results are saved to `./output/`.
 
-1.  **Extract secrets from a firmware binary:**
-    ```bash
-    python src/firmware_analysis/crypto_key_extractor.py /path/to/firmware.bin
-    ```
+## Requirements
 
-2.  **Fuzz a network-accessible hardware interface:**
-    ```bash
-    python src/hardware_exploitation/network_to_hardware_fuzz.py -t 127.0.XXX.XXX -p XXXX
-    ```
+- Linux (any distro with bash)
+- USB Bluetooth adapter (for BLE commands)
+- Root or `sudo` access (for Bluetooth raw socket access)
+
+Docker handles all Python dependencies automatically.
 
 ## Common Issues
 
--   **Permission Denied:** Most radio-related scripts require `sudo` to access Bluetooth hardware.
--   **bluepy not found:** Ensure you have installed the `bluepy` package and the system dependencies (`python3-bluez`, `libbluetooth-dev`) on Linux.
--   **No Devices Found:** Make sure your system's Bluetooth is enabled and the `hci` interface is up. You can check with `hciconfig`.
+**`meshbreaker: command not found`**
+Make sure `~/.local/bin` is in your PATH. Add this to `~/.bashrc` or `~/.zshrc`:
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+**`No Bluetooth adapter found`**
+Plug in a USB Bluetooth dongle and check `hciconfig`.
+
+**Permission denied on Bluetooth socket**
+Run with `sudo meshbreaker ...` or grant your user access to the `bluetooth` group:
+```bash
+sudo usermod -aG bluetooth $USER
+```

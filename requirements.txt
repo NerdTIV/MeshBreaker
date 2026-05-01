@@ -1,41 +1,30 @@
-# BLE Exploitation Suite - Requirements
-# Install: pip install -r requirements.txt
+# MeshBreaker v3.0 — Requirements
+# sudo apt install python3-pip bluetooth bluez bluez-tools libbluetooth-dev
+# pip install -r requirements.txt
 
-# === BLE Radio Fuzzing ===
-# Packet sniffing and analysis
-scapy>=2.5.0                 # Packet manipulation and sniffing
-pycryptodome>=3.18.0         # Crypto operations
+# ── Core BLE ──────────────────────────────────────────────────────────────────
+bleak>=0.21.0                                      # cross-platform BLE async
+bluepy>=1.3.0; platform_system=="Linux"            # Linux BLE GATT (alt backend)
 
-# BLE service enumeration / scanning
-bleak>=0.20.0                # Cross-platform BLE (Windows/Linux/Mac)
-bluepy>=1.3.0; platform_system=="Linux"  # BLE GATT client (Linux only)
+# ── Packet manipulation ───────────────────────────────────────────────────────
+scapy>=2.5.0                                       # BLE packet capture + crafting
 
-# === Hardware Fuzzing ===
-# No special requirements - uses standard library
+# ── Crypto / firmware analysis ────────────────────────────────────────────────
+pycryptodome>=3.18.0                               # AES/RSA key detection
 
-# === Firmware Analysis ===
-pycryptodome>=3.18.0         # Crypto key extraction
-# Optional advanced tools:
-# capstone>=5.0.1            # Disassembly (ARM/Thumb)
-# unicorn>=2.0.1             # CPU emulation
-# r2pipe>=1.8.0              # Radare2 integration
+# ── Hardware fuzzing ──────────────────────────────────────────────────────────
+pyserial>=3.5                                      # UART fuzzing
 
-# === Utilities ===
-pyserial>=3.5                # Serial communication (for UART)
+# ── TUI / CLI ─────────────────────────────────────────────────────────────────
+rich>=13.0.0                                       # panels, tables, progress bars
+click>=8.1.0                                       # CLI argument parsing
 
-# === Development/Optional ===
-# Install these for enhanced features:
-# wireshark (system package)     # PCAP analysis
-# btlejack (pip install btlejack) # BLE hijacking
-# ubertooth (system package)      # Ubertooth tools
+# ── Report generation ────────────────────────────────────────────────────────
+jinja2>=3.1.0                                      # optional HTML templating
 
-# === Platform-specific ===
-# Linux:
-#   sudo apt-get install bluez python3-bluez libbluetooth-dev
-#   sudo apt-get install wireshark tshark
-#
-# Mac:
-#   brew install bluez
-#
-# Windows:
-#   Install npcap for Scapy: https://npcap.com/
+# ── Optional (advanced) ───────────────────────────────────────────────────────
+# capstone>=4.0.2          # ARM disassembly (phase 3 deep analysis)
+# unicorn>=2.0.0           # CPU emulation (QEMU-style offset verification)
+# r2pipe>=1.8.0            # radare2 integration
+# btlejack                 # BLE packet injection (Ubertooth)
+# pyshark>=0.6             # pcapng parsing via tshark

@@ -1,0 +1,96 @@
+{
+  "version": "1.1",
+  "protocols": [
+    {
+      "id": "sig_mesh",
+      "name": "Bluetooth SIG Mesh",
+      "confidence_threshold": 60,
+      "indicators": {
+        "service_uuids": ["0x1827", "0x1828"],
+        "ad_types": ["0x2A"],
+        "company_ids": [],
+        "beacon_types": ["mesh_message", "mesh_beacon", "pb_adv"],
+        "port_patterns": [],
+        "string_patterns": ["mesh", "provisioning", "netkey", "appkey", "devkey", "publish"]
+      },
+      "cve_tags": ["ble_mesh_sig"],
+      "notes": "UUID 0x1827=Mesh Provisioning, 0x1828=Mesh Proxy. AD type 0x2A=Mesh Message."
+    },
+    {
+      "id": "wirepas",
+      "name": "Wirepas Mesh",
+      "confidence_threshold": 70,
+      "indicators": {
+        "service_uuids": [],
+        "ad_types": ["0xFF"],
+        "company_ids": ["0x0077"],
+        "beacon_types": ["manufacturer_specific"],
+        "port_patterns": [5000, 5001, 5002, 9191, 9192],
+        "string_patterns": ["wirepas", "cipher_key", "auth_key", "network_address", "role_designator"]
+      },
+      "cve_tags": ["wirepas"],
+      "notes": "Company ID 0x0077 (Wirepas Oy). Proprietary 32-byte cipher_key + auth_key. gRPC default ports 5000-5002."
+    },
+    {
+      "id": "thread",
+      "name": "Thread / OpenThread",
+      "confidence_threshold": 65,
+      "indicators": {
+        "service_uuids": ["0xFFFB"],
+        "ad_types": ["0xFF", "0x16"],
+        "company_ids": [],
+        "beacon_types": ["thread_beacon"],
+        "port_patterns": [61631, 19788],
+        "string_patterns": ["thread", "openthread", "joiner", "commissioner", "tcat", "meshcop", "panid"]
+      },
+      "cve_tags": ["thread", "openthread"],
+      "notes": "UUID 0xFFFB=TCAT. Thread uses IEEE 802.15.4 channel + PANID. Commissioner port 49191."
+    },
+    {
+      "id": "zigbee_ble_coex",
+      "name": "Zigbee / BLE Coexistence",
+      "confidence_threshold": 50,
+      "indicators": {
+        "service_uuids": ["0xFFF0", "0xFFF1"],
+        "ad_types": ["0xFF"],
+        "company_ids": ["0x1217", "0x0107"],
+        "beacon_types": ["manufacturer_specific"],
+        "port_patterns": [],
+        "string_patterns": ["zigbee", "zdo", "zcl", "nwk_key", "link_key"]
+      },
+      "cve_tags": ["zigbee"],
+      "notes": "Silicon Labs (0x1217), Ember (0x0107). Zigbee runs on 802.15.4 but often paired with BLE gateway."
+    },
+    {
+      "id": "proprietary",
+      "name": "Custom / Proprietary Mesh",
+      "confidence_threshold": 40,
+      "indicators": {
+        "service_uuids": [],
+        "ad_types": ["0xFF"],
+        "company_ids": [],
+        "beacon_types": ["manufacturer_specific"],
+        "port_patterns": [],
+        "string_patterns": ["mesh", "node", "gateway", "broadcast", "flood"]
+      },
+      "cve_tags": ["proprietary"],
+      "notes": "Fallback: manufacturer-specific AD data with unknown company ID. Requires manual analysis."
+    }
+  ],
+  "ad_type_names": {
+    "0x01": "Flags",
+    "0x02": "Incomplete 16-bit UUIDs",
+    "0x03": "Complete 16-bit UUIDs",
+    "0x07": "Complete 128-bit UUIDs",
+    "0x08": "Shortened Local Name",
+    "0x09": "Complete Local Name",
+    "0x0A": "TX Power Level",
+    "0x16": "Service Data 16-bit UUID",
+    "0x20": "Service Data 32-bit UUID",
+    "0x21": "Service Data 128-bit UUID",
+    "0x2A": "Mesh Message",
+    "0x2B": "Mesh Beacon",
+    "0x29": "PB-ADV",
+    "0xFF": "Manufacturer Specific Data"
+  }
+}
