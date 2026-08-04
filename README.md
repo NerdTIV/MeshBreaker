@@ -1,6 +1,6 @@
 # MeshBreaker
 
-BLE Mesh security research tool — scan, capture, enumerate, fuzz, analyze firmware, check CVEs, generate reports.
+BLE Mesh security research tool : scan, capture, enumerate, fuzz, analyze firmware, check CVEs, generate reports.
 
 Built for authorized testing on BLE Mesh deployments: industrial gateways, smart lighting controllers, sensor networks, and anything running SIG Mesh, Wirepas, Thread, or a custom BLE stack.
 
@@ -20,15 +20,15 @@ meshbreaker cve-check    →  Match kernel + BlueZ version against 46 known CVEs
 meshbreaker report       →  Export everything as Markdown, HTML, or JSON
 ```
 
-Everything runs inside Docker — no Python dependency hell, no distro-specific setup.
+Everything runs inside Docker, no Python dependency hell, no distro-specific setup.
 
 ---
 
 ## Requirements
 
 - **Linux or Windows**
-- **USB Bluetooth dongle** — for BLE commands (recon, fuzz, enumerate, capture)
-- **Python 3.10+** — Windows only (Linux uses Docker, Python is inside the image)
+- **USB Bluetooth dongle** - for BLE commands (recon, fuzz, enumerate, capture)
+- **Python 3.10+** - Windows only (Linux uses Docker, Python is inside the image)
 
 ---
 
@@ -152,7 +152,7 @@ meshbreaker enumerate -t AA:BB:CC:DD:EE:FF
 meshbreaker enumerate --sdp
 ```
 
-Connects to the target and dumps all GATT services, characteristics, and descriptors. Reads values from readable characteristics. Highlights writable characteristics — those are the attack surface for fuzzing. Also runs `sdptool browse` if `--sdp` is passed.
+Connects to the target and dumps all GATT services, characteristics, and descriptors. Reads values from readable characteristics. Highlights writable characteristics - those are the attack surface for fuzzing. Also runs `sdptool browse` if `--sdp` is passed.
 
 ---
 
