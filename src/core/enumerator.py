@@ -1,6 +1,7 @@
 import asyncio
 import socket
 import struct
+from dataclasses import dataclass, field
 from typing import Any
 
 from bleak import BleakClient
@@ -170,3 +171,52 @@ class SDPEnumerator:
             logger.error("sdptool not found — install bluez-tools")
         except subprocess.CalledProcessError as e:
             logger.warning(f"sdptool: {e.output.decode(errors='replace')}")
+
+
+@dataclass
+class ProbeResult:
+    """What one connect-and-look-around told us about a device."""
+
+    mac: str = ""
+    connected: bool = False
+    mtu: int = 0
+    services: int = 0
+    characteristics: int = 0
+    writable: list[dict] = field(default_factory=list)
+    error: str = ""
+
+    @property
+    def fuzzable(self) -> bool:
+        return self.connected and bool(self.writable)
+
+
+async def probe_writable(mac: str, adapter: str = "hci0",
+                         timeout: float = 20.0) -> ProbeResult:
+    """Connect to one device and count what a fuzzer could write to.
+
+    Scanning cannot answer this. Nothing in an advertisement says whether a
+    device accepts connections, and the writable characteristics only exist
+    once service discovery has run. So this connects, which is why the caller
+    has to name the device explicitly rather than sweeping everything in
+    range.
+    """
+    result = ProbeResult(mac=mac)
+    try:
+        async with BleakClient(mac, adapter=adapter, timeout=timeout) as client:
+            result.connected = True
+            result.mtu = getattr(client, "mtu_size", 0) or 0
+            for service in client.services:
+                result.services += 1
+                for char in service.characteristics:
+                    result.characteristics += 1
+                    props = char.properties if isinstance(char.properties, (list, tuple)) \
+                            else [char.properties]
+                    if "WRITE" in " ".join(str(x) for x in props).upper():
+                        result.writable.append({
+                            "handle": char.handle,
+                            "uuid": str(char.uuid),
+                            "properties": [str(x) for x in props],
+                        })
+    except Exception as e:
+        result.error = logger.describe(e)
+    return result

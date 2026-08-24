@@ -128,9 +128,29 @@ def cli(ctx, output, adapter):
 @click.option("--classic", is_flag=True, help="Also run Bluetooth Classic scan")
 @click.option("--target",  default=None, metavar="MAC",
               help="Pre-set target MAC (saves to session)")
+@click.option("--fuzzable", default=None, metavar="MAC[,MAC...]",
+              help="After the scan, connect to these devices and report what "
+                   "a fuzzer could write to. Use 'scanned' for every device "
+                   "the scan found.")
 @click.pass_context
-def recon(ctx, scan_time, classic, target):
-    """BLE scan + protocol fingerprint."""
+def recon(ctx, scan_time, classic, target, fuzzable):
+    """BLE scan + protocol fingerprint.
+
+    \b
+    --fuzzable connects to the devices you name and counts their writable
+    characteristics, which no scan can tell you: nothing in an advertisement
+    says whether a device accepts connections, and characteristics only exist
+    once service discovery has run.
+
+    \b
+    It never picks targets on its own. Everything in range belongs to
+    someone, and connecting to a stranger's device is not reconnaissance.
+
+    \b
+    Examples:
+      meshbreaker recon --fuzzable 72:12:E9:5E:DD:88
+      meshbreaker recon --fuzzable scanned      (only in a lab you own)
+    """
     _banner()
     output  = ctx.obj["output"]
     adapter = ctx.obj["adapter"]
@@ -170,11 +190,75 @@ def recon(ctx, scan_time, classic, target):
                 session.mesh_protocol = matches[0].protocol_id
                 logger.info(f"Protocol: {session.mesh_protocol}")
 
+        if fuzzable:
+            await _probe_fuzzable(fuzzable, devices, adapter, session)
+
         if devices and not session.target_mac:
             console.print("\n[dim]Hint: set target with[/]  meshbreaker set-target <MAC>")
 
     asyncio.run(_run())
     _save_session(session, output)
+
+
+async def _probe_fuzzable(selector: str, devices, adapter: str, session):
+    """Connect to the named devices and report their writable surface."""
+    from src.core.enumerator import probe_writable
+
+    if selector.strip().lower() == "scanned":
+        macs = [d.mac for d in devices]
+        logger.warning(f"Probing all {len(macs)} scanned device(s) — only do "
+                       f"this on hardware you are authorised to touch")
+    else:
+        macs = [m.strip().upper() for m in selector.split(",") if m.strip()]
+
+    if not macs:
+        logger.error("--fuzzable needs at least one MAC, or the word 'scanned'")
+        return
+
+    results = []
+    for mac in macs:
+        logger.info(f"Probing {mac}…")
+        result = await probe_writable(mac, adapter=adapter)
+        results.append(result)
+        if not result.connected:
+            logger.warning(f"  not connectable — {result.error}")
+        elif result.writable:
+            logger.success(f"  {len(result.writable)} writable characteristic(s), "
+                           f"MTU {result.mtu}")
+        else:
+            logger.info(f"  connected, {result.services} service(s), "
+                        f"nothing writable")
+
+    _print_probe_results(results)
+    session.store("fuzzable", [
+        {"mac": r.mac, "connected": r.connected, "mtu": r.mtu,
+         "services": r.services, "characteristics": r.characteristics,
+         "writable": r.writable, "error": r.error}
+        for r in results
+    ])
+
+    best = [r for r in results if r.fuzzable]
+    if best:
+        logger.info(f"Fuzz one with:  meshbreaker fuzz -m gatt -t {best[0].mac}")
+
+
+def _print_probe_results(results):
+    t = Table(title="Fuzzable Surface", box=box.ROUNDED, border_style="magenta")
+    t.add_column("MAC", style="bold white", width=19)
+    t.add_column("Connect", width=9)
+    t.add_column("MTU", style="cyan", width=5)
+    t.add_column("Services", style="dim", width=9)
+    t.add_column("Writable", width=9)
+    t.add_column("Note", style="dim", width=28)
+    for r in results:
+        if not r.connected:
+            t.add_row(r.mac, "[red]no[/]", "—", "—", "—", r.error[:28])
+            continue
+        writable = f"[yellow]{len(r.writable)}[/]" if r.writable else "0"
+        note = "fuzz target" if r.writable else "no write surface"
+        t.add_row(r.mac, "[green]yes[/]", str(r.mtu), str(r.services),
+                  writable, note)
+    console.print(t)
 
 
 @cli.command()

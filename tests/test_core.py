@@ -481,6 +481,80 @@ def test_fuzzer_stops_when_the_link_drops():
     assert fuzzer.skipped == 13
 
 
+def test_probe_result_is_only_fuzzable_with_a_write_surface():
+    from src.core.enumerator import ProbeResult
+
+    assert not ProbeResult(mac="A", connected=False).fuzzable
+    assert not ProbeResult(mac="A", connected=True).fuzzable
+    assert ProbeResult(mac="A", connected=True,
+                       writable=[{"handle": 1}]).fuzzable
+
+
+def test_probe_reports_unreachable_devices_instead_of_raising(monkeypatch):
+    """A device that rotated its address must be reported, not crash the run.
+
+    iOS changes its random address every few minutes, so a MAC noted at the
+    start of a session is routinely stale by the time it is probed.
+    """
+    import asyncio
+    from src.core import enumerator
+
+    class Refuses:
+        def __init__(self, *a, **kw):
+            pass
+
+        async def __aenter__(self):
+            raise Exception("Device with address AA:BB was not found.")
+
+        async def __aexit__(self, *a):
+            return False
+
+    monkeypatch.setattr(enumerator, "BleakClient", Refuses)
+    result = asyncio.run(enumerator.probe_writable("AA:BB:CC:DD:EE:FF"))
+
+    assert not result.connected
+    assert not result.fuzzable
+    assert "was not found" in result.error
+
+
+def test_probe_counts_only_writable_characteristics(monkeypatch):
+    import asyncio
+    from src.core import enumerator
+
+    class Char:
+        def __init__(self, handle, uuid, props):
+            self.handle, self.uuid, self.properties = handle, uuid, props
+
+    class Service:
+        def __init__(self, chars):
+            self.characteristics = chars
+
+    class Fake:
+        mtu_size = 185
+        services = [Service([
+            Char(0x10, "2a39", ["read", "write"]),
+            Char(0x12, "2a37", ["read", "notify"]),
+            Char(0x14, "2a06", ["write-without-response"]),
+        ])]
+
+        def __init__(self, *a, **kw):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+    monkeypatch.setattr(enumerator, "BleakClient", Fake)
+    result = asyncio.run(enumerator.probe_writable("AA:BB:CC:DD:EE:FF"))
+
+    assert result.connected and result.fuzzable
+    assert result.mtu == 185
+    assert result.characteristics == 3
+    assert [w["handle"] for w in result.writable] == [0x10, 0x14]
+
+
 def test_cli_commands_do_not_shadow_builtins():
     """A click command named like a builtin shadows it for the whole module.
 

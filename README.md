@@ -103,6 +103,24 @@ Restart your terminal after install.
 
 ---
 
+## No target to practise on?
+
+Your phone can act as a BLE peripheral, which gives you a legitimate target in
+about a minute — LightBlue on iOS, nRF Connect on Android. See
+[docs/LAB_TARGET.md](docs/LAB_TARGET.md) for the setup and the traps (iOS
+rotates its address every few minutes, and the app has to stay in the
+foreground).
+
+Once it advertises:
+
+```bash
+meshbreaker recon --fuzzable AA:BB:CC:DD:EE:FF
+```
+
+`--fuzzable` connects and counts the characteristics a fuzzer could write to.
+A scan cannot tell you that — nothing in an advertisement says whether a
+device accepts connections. It never picks targets on its own.
+
 ## Commands
 
 ### Auto — the whole chain

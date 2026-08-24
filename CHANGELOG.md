@@ -3,6 +3,18 @@
 ## [Unreleased]
 
 ### Added
+- `recon --fuzzable MAC[,MAC...]` connects to the devices you name and reports
+  what a fuzzer could write to: connectable or not, negotiated MTU, service
+  count and every writable characteristic. A scan cannot answer this —
+  nothing in an advertisement says whether a device accepts connections, and
+  characteristics only exist once service discovery has run. It never picks
+  targets on its own; `scanned` sweeps everything the scan found and says out
+  loud that it only belongs in a lab you own.
+- `docs/LAB_TARGET.md` — turning a phone into a BLE peripheral so there is
+  something legitimate to practise on, with the traps that cost an hour
+  otherwise: iOS rotates its address every few minutes, both platforms stop
+  advertising when the app is backgrounded, and the advertised name is often
+  not the one you asked for.
 - CI now runs the test suite. The workflow linted, built the Docker image and
   checked that `--help` loads, but never ran a single test — on Python 3.11,
   3.12 and 3.13. It installs only what the tests import (`bleak`, `click`,
