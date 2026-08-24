@@ -94,6 +94,16 @@
   integrity, corrupt capture handling and BLE error explanation.
 
 ### Fixed
+- The GATT fuzzer kept writing into a dead connection. A target that tears
+  the link down on the first unauthorised write — which is what iOS does —
+  left every later payload failing with BlueZ's "Service Discovery has not
+  been performed yet", a string the crash heuristic did not recognise. Those
+  payloads were still counted, so the summary claimed hundreds of writes that
+  never left the machine. The fuzzer now checks `client.is_connected`, stops
+  on link loss, reports how many payloads were skipped, and reconnects with a
+  growing backoff to finish the remaining characteristics. A link loss is
+  reported as a finding in its own right: the target tore down the connection
+  instead of rejecting the write.
 - Errors carrying no message printed as nothing: bleak raises
   `TimeoutError('')` on a failed connection, so `enumerate` reported
   "GATT enumeration failed: " and left you guessing. `logger.describe()`

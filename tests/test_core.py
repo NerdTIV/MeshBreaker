@@ -450,6 +450,37 @@ def test_report_skips_gatt_section_with_nothing_to_show(tmp_path):
     assert "No writable characteristics found" in body
 
 
+def test_fuzzer_stops_when_the_link_drops():
+    """A dead client used to absorb every remaining payload as if sent.
+
+    iOS tears the connection down on the first unauthorised write. BlueZ then
+    answers every later write with "Service Discovery has not been performed
+    yet", which the old crash heuristic did not recognise, so the run kept
+    going and the summary counted payloads that never left the machine.
+    """
+    import asyncio
+    from src.modules.gatt_fuzzer import GATTFuzzer
+
+    class DeadAfterFirstWrite:
+        def __init__(self):
+            self.is_connected = True
+            self.writes = 0
+
+        async def write_gatt_char(self, handle, payload, response=True):
+            self.writes += 1
+            self.is_connected = False
+            raise Exception("Service Discovery has not been performed yet")
+
+    client = DeadAfterFirstWrite()
+    fuzzer = GATTFuzzer("AA:BB:CC:DD:EE:FF", delay=0)
+    results = asyncio.run(fuzzer.fuzz_characteristic(client, 0x0010, "2a39"))
+
+    assert client.writes == 1
+    assert len(results) == 1
+    assert results[0].crashed
+    assert fuzzer.skipped == 13
+
+
 def test_cli_commands_do_not_shadow_builtins():
     """A click command named like a builtin shadows it for the whole module.
 

@@ -47,6 +47,12 @@ def _payloads(max_size: int = 512) -> list[bytes]:
     ]
 
 
+LINK_LOST_HINTS = (
+    "disconnect", "reset", "timeout", "closed", "not connected",
+    "service discovery has not been performed",
+)
+
+
 class GATTFuzzer:
     def __init__(self, target: str, adapter: str = "hci0",
                  delay: float = 0.2, callback: Callable | None = None):
@@ -56,6 +62,8 @@ class GATTFuzzer:
         self.callback = callback
         self.results:  list[FuzzResult] = []
         self.crashes:  list[FuzzResult] = []
+        self.skipped:  int = 0
+        self.reconnects: int = 0
 
     async def fuzz_characteristic(self, client: BleakClient,
                                    handle: int, uuid: str):
@@ -71,15 +79,20 @@ class GATTFuzzer:
                 result.response = "ACK"
                 logger.debug(f"    [{i:02d}] {len(payload):>4}B → ACK")
             except Exception as e:
-                err = str(e)
+                err = logger.describe(e)
                 result.response = err
-                if any(x in err.lower() for x in ("disconnect", "reset", "timeout", "closed")):
+                link_lost = (not client.is_connected
+                             or any(x in err.lower() for x in LINK_LOST_HINTS))
+                if link_lost:
                     result.crashed = True
                     self.crashes.append(result)
-                    logger.warning(f"    [{i:02d}] {len(payload):>4}B → CRASH: {err}")
+                    logger.warning(f"    [{i:02d}] {len(payload):>4}B → LINK LOST: {err}")
                     if self.callback:
                         self.callback(result)
                     results.append(result)
+                    self.skipped += len(payloads) - i - 1
+                    logger.warning(f"    target dropped the link — "
+                                   f"{len(payloads) - i - 1} payload(s) not sent")
                     break
                 logger.debug(f"    [{i:02d}] {len(payload):>4}B → {err[:60]}")
             results.append(result)
@@ -87,26 +100,73 @@ class GATTFuzzer:
 
         return results
 
-    async def run(self):
-        logger.info(f"GATT fuzzer → {self.target}")
-        try:
-            async with BleakClient(self.target) as client:
-                logger.success(f"Connected — enumerating writable characteristics…")
-                for svc in client.services:
-                    for char in svc.characteristics:
-                        props = char.properties if isinstance(char.properties, (list, tuple)) \
-                                else [char.properties]
-                        props_str = " ".join(str(p) for p in props).upper()
-                        if "WRITE" in props_str:
-                            res = await self.fuzz_characteristic(
-                                client, char.handle, str(char.uuid))
-                            self.results.extend(res)
-        except Exception as e:
-            logger.error(f"Fuzzer connection failed: {logger.describe(e)}")
+    @staticmethod
+    def _writable(client: BleakClient) -> list[tuple[int, str]]:
+        found = []
+        for svc in client.services:
+            for char in svc.characteristics:
+                props = char.properties if isinstance(char.properties, (list, tuple)) \
+                        else [char.properties]
+                if "WRITE" in " ".join(str(p) for p in props).upper():
+                    found.append((char.handle, str(char.uuid)))
+        return found
 
-        total   = len(self.results)
+    async def run(self, max_reconnects: int = 3):
+        """Fuzz every writable characteristic, reconnecting when the link drops.
+
+        A target that terminates the connection on the first unauthorised
+        write — which is what iOS does — used to leave the fuzzer writing into
+        a dead client for the rest of the run. Every later payload failed with
+        "Service Discovery has not been performed yet" and was still counted
+        as sent, so the summary claimed hundreds of payloads that never left
+        the machine.
+        """
+        logger.info(f"GATT fuzzer → {self.target}")
+        targets: list[tuple[int, str]] = []
+        index = 0
+
+        while True:
+            try:
+                async with BleakClient(self.target) as client:
+                    if not targets:
+                        targets = self._writable(client)
+                        logger.success(f"Connected — {len(targets)} writable "
+                                       f"characteristic(s) to fuzz")
+                        if not targets:
+                            break
+
+                    while index < len(targets):
+                        handle, uuid = targets[index]
+                        res = await self.fuzz_characteristic(client, handle, uuid)
+                        self.results.extend(res)
+                        index += 1
+                        if not client.is_connected:
+                            break
+
+                    if index >= len(targets):
+                        break
+            except Exception as e:
+                logger.error(f"Fuzzer connection failed: {logger.describe(e)}")
+                break
+
+            if self.reconnects >= max_reconnects:
+                remaining = len(targets) - index
+                logger.warning(f"Giving up after {max_reconnects} reconnects — "
+                               f"{remaining} characteristic(s) left unfuzzed")
+                break
+            self.reconnects += 1
+            backoff = 3.0 * self.reconnects
+            logger.info(f"  reconnecting ({self.reconnects}/{max_reconnects}) "
+                        f"in {backoff:.0f}s…")
+            await asyncio.sleep(backoff)
+
+        sent    = len(self.results)
         crashes = len(self.crashes)
-        logger.success(f"Fuzzing complete — {total} payloads sent, {crashes} crashes")
+        logger.success(f"Fuzzing complete — {sent} payload(s) sent, "
+                       f"{crashes} link loss(es), {self.skipped} skipped")
+        if crashes:
+            logger.info("  A link loss is a finding: the target tore down the "
+                        "connection rather than rejecting the write.")
         return self.results
 
     def fuzz_read_response(self):
