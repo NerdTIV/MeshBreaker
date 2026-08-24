@@ -45,6 +45,30 @@ class ReportGenerator:
         self.session = session
         self._ts = time.strftime("%Y-%m-%d %H:%M:%S")
 
+    def generate(self, fmt: str, output_dir=None) -> str:
+        """Write a single format and return its path.
+
+        `fmt` is md, markdown, html or json.
+        """
+        writers = {
+            "json":     ("json", self._write_json),
+            "md":       ("md",   self._write_markdown),
+            "markdown": ("md",   self._write_markdown),
+            "html":     ("html", self._write_html),
+        }
+        key = fmt.lower()
+        if key not in writers:
+            raise ValueError(f"Unknown report format: {fmt} (use md, html or json)")
+
+        extension, writer = writers[key]
+        dest = Path(output_dir or self.session.output_dir) / "reports"
+        dest.mkdir(parents=True, exist_ok=True)
+        path = str(dest / f"report_{self.session.session_id}.{extension}")
+
+        writer(path)
+        logger.success(f"Report written → {path}")
+        return path
+
     def generate_all(self, output_dir=None):
         dest = Path(output_dir or self.session.output_dir) / "reports"
         dest.mkdir(parents=True, exist_ok=True)
@@ -142,6 +166,64 @@ class ReportGenerator:
                 lines.append(f"**Attack surface ({len(surface)} writable characteristics):**\n")
                 for item in surface:
                     lines.append(f"- `{item.get('uuid')}` handle `{item.get('handle', 0):#06x}`")
+            lines.append("")
+
+        # Provisioning audit
+        prov_cap  = self.session.get("provisioning_capture", {})
+        prov_gatt = self.session.get("provisioning_gatt", {})
+        if prov_cap or prov_gatt:
+            lines.append("## Provisioning Security\n")
+            if prov_cap:
+                lines.append(f"- PB-ADV sessions observed: {prov_cap.get('sessions', 0)}")
+            if prov_gatt:
+                exposed = prov_gatt.get("provisioning_service")
+                lines.append(f"- PB-GATT provisioning service exposed: "
+                             f"**{'yes' if exposed else 'no'}**")
+                lines.append(f"- Mesh Proxy service present: "
+                             f"{'yes' if prov_gatt.get('proxy_service') else 'no'}")
+            findings = list(prov_cap.get("findings", [])) + list(prov_gatt.get("findings", []))
+            if findings:
+                lines.append("")
+                for f in findings:
+                    cve = f" ({f['cve']})" if f.get("cve") else ""
+                    lines.append(f"- **{f.get('severity')}** — {f.get('title')}{cve}")
+                    lines.append(f"  - {f.get('detail')}")
+            lines.append("")
+
+        # Directed Forwarding audit
+        df = self.session.get("directed_forwarding", {})
+        if df:
+            lines.append("## Directed Forwarding (Mesh 1.1)\n")
+            lines.append(f"- Detected: **{'yes' if df.get('present') else 'no'}** "
+                         f"(confidence {df.get('confidence', 0)}%)")
+            for e in df.get("evidence", []):
+                lines.append(f"  - {e}")
+            models = df.get("models", {})
+            if models:
+                lines.append("- Mesh 1.1 models found:")
+                for mid, name in models.items():
+                    lines.append(f"  - `{mid}` {name}")
+            for f in df.get("findings", []):
+                lines.append(f"- **{f.get('severity')}** — {f.get('title')}")
+                lines.append(f"  - {f.get('detail')}")
+                if f.get("reference"):
+                    lines.append(f"  - *Reference: {f['reference']}*")
+            lines.append("")
+
+        # Connection following
+        follow = self.session.get("connection_follow", {})
+        if follow:
+            lines.append("## Connection Following\n")
+            lines.append(f"- Access Address: `{follow.get('access_address')}`")
+            lines.append(f"- CRCInit: `{follow.get('crc_init')}`")
+            lines.append(f"- Hop increment: {follow.get('hop_increment')} "
+                         f"(algorithm {follow.get('algorithm')})")
+            lines.append(f"- Connection interval: {follow.get('interval_ms')} ms")
+            lines.append(f"- Channels in use: {follow.get('channels_used')} / 37")
+            channels = follow.get("predicted_channels", [])
+            if channels:
+                lines.append(f"- Predicted channel sequence: "
+                             f"`{' '.join(str(c) for c in channels[:20])}`")
             lines.append("")
 
         # Fuzz results

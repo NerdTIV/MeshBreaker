@@ -25,6 +25,7 @@ class CapturedBeacon:
     ad_type:   int | None
     raw_ad:    bytes
     mesh_hint: str | None   # sig_mesh | wirepas | thread | custom | None
+    service_data: dict = field(default_factory=dict)   # uuid -> hex payload
 
 
 @dataclass
@@ -86,6 +87,13 @@ class PassiveCapture:
                 raw_bytes = bytes([k & 0xFF, k >> 8]) + v
                 break
 
+            # BlueZ will not give us raw AD structures, but it does surface
+            # service data — and the mesh provisioning (0x1827) and proxy
+            # (0x1828) services advertise there. Keep it: it is the only mesh
+            # signal a standard adapter can see.
+            service_data = {str(uuid): payload.hex()
+                            for uuid, payload in (adv.service_data or {}).items()}
+
             b = CapturedBeacon(
                 timestamp  = time.time() - start,
                 mac        = device.address,
@@ -94,6 +102,7 @@ class PassiveCapture:
                 ad_type    = 0xFF if raw_bytes else None,
                 raw_ad     = raw_bytes,
                 mesh_hint  = mesh_hint,
+                service_data = service_data,
             )
             self._session.beacons.append(b)
 
@@ -128,6 +137,7 @@ class PassiveCapture:
                 "t": b.timestamp, "mac": b.mac, "name": b.name,
                 "rssi": b.rssi, "ad_type": b.ad_type,
                 "raw": b.raw_ad.hex(), "mesh": b.mesh_hint,
+                "service_data": b.service_data,
             }
             for b in session.beacons
         ]

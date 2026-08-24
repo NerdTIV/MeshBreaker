@@ -1,20 +1,93 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "protocols": [
     {
       "id": "sig_mesh",
       "name": "Bluetooth SIG Mesh",
       "confidence_threshold": 60,
       "indicators": {
-        "service_uuids": ["0x1827", "0x1828"],
-        "ad_types": ["0x2A"],
+        "service_uuids": [
+          "0x1827",
+          "0x1828"
+        ],
+        "ad_types": [
+          "0x2A"
+        ],
         "company_ids": [],
-        "beacon_types": ["mesh_message", "mesh_beacon", "pb_adv"],
+        "beacon_types": [
+          "mesh_message",
+          "mesh_beacon",
+          "pb_adv",
+          "pb_gatt",
+          "secure_network_beacon",
+          "private_beacon"
+        ],
         "port_patterns": [],
-        "string_patterns": ["mesh", "provisioning", "netkey", "appkey", "devkey", "publish"]
+        "string_patterns": [
+          "mesh",
+          "provisioning",
+          "netkey",
+          "appkey",
+          "devkey",
+          "publish",
+          "pb_adv",
+          "pb_gatt",
+          "authvalue",
+          "oob",
+          "provisioner",
+          "unprovisioned",
+          "proxy_cfg",
+          "relay",
+          "friend",
+          "lpn"
+        ]
       },
-      "cve_tags": ["ble_mesh_sig"],
-      "notes": "UUID 0x1827=Mesh Provisioning, 0x1828=Mesh Proxy. AD type 0x2A=Mesh Message."
+      "cve_tags": [
+        "ble_mesh_sig"
+      ],
+      "notes": "UUID 0x1827=Mesh Provisioning, 0x1828=Mesh Proxy. AD type 0x2A=Mesh Message, 0x2B=Mesh Beacon, 0x29=PB-ADV. Provisioning PDUs before key derivation are unencrypted."
+    },
+    {
+      "id": "sig_mesh_11",
+      "name": "Bluetooth SIG Mesh 1.1 (Directed Forwarding)",
+      "confidence_threshold": 60,
+      "indicators": {
+        "service_uuids": [
+          "0x1827",
+          "0x1828"
+        ],
+        "ad_types": [
+          "0x2A",
+          "0x2B"
+        ],
+        "company_ids": [],
+        "beacon_types": [
+          "private_beacon",
+          "mesh_message"
+        ],
+        "port_patterns": [],
+        "string_patterns": [
+          "directed_forwarding",
+          "bt_mesh_df",
+          "bt_mesh_dfw",
+          "path_origin",
+          "path_target",
+          "path_request",
+          "path_reply",
+          "forwarding_table",
+          "private_beacon",
+          "on_demand_proxy",
+          "sar_config",
+          "opcodes_aggregator",
+          "large_comp_data",
+          "solicitation_pdu"
+        ]
+      },
+      "cve_tags": [
+        "ble_mesh_sig",
+        "mesh_df"
+      ],
+      "notes": "Mesh Protocol 1.1 adds Directed Forwarding (routing instead of managed flooding), Private Beacons and SAR configuration. Directed Forwarding models are 0x0007 (server) and 0x0008 (client). Routing control plane is new attack surface - see SSTIC 2025, Tali/Cayre/Nicomette/Auriol."
     },
     {
       "id": "wirepas",
@@ -22,13 +95,33 @@
       "confidence_threshold": 70,
       "indicators": {
         "service_uuids": [],
-        "ad_types": ["0xFF"],
-        "company_ids": ["0x0077"],
-        "beacon_types": ["manufacturer_specific"],
-        "port_patterns": [5000, 5001, 5002, 9191, 9192],
-        "string_patterns": ["wirepas", "cipher_key", "auth_key", "network_address", "role_designator"]
+        "ad_types": [
+          "0xFF"
+        ],
+        "company_ids": [
+          "0x0077"
+        ],
+        "beacon_types": [
+          "manufacturer_specific"
+        ],
+        "port_patterns": [
+          5000,
+          5001,
+          5002,
+          9191,
+          9192
+        ],
+        "string_patterns": [
+          "wirepas",
+          "cipher_key",
+          "auth_key",
+          "network_address",
+          "role_designator"
+        ]
       },
-      "cve_tags": ["wirepas"],
+      "cve_tags": [
+        "wirepas"
+      ],
       "notes": "Company ID 0x0077 (Wirepas Oy). Proprietary 32-byte cipher_key + auth_key. gRPC default ports 5000-5002."
     },
     {
@@ -36,14 +129,35 @@
       "name": "Thread / OpenThread",
       "confidence_threshold": 65,
       "indicators": {
-        "service_uuids": ["0xFFFB"],
-        "ad_types": ["0xFF", "0x16"],
+        "service_uuids": [
+          "0xFFFB"
+        ],
+        "ad_types": [
+          "0xFF",
+          "0x16"
+        ],
         "company_ids": [],
-        "beacon_types": ["thread_beacon"],
-        "port_patterns": [61631, 19788],
-        "string_patterns": ["thread", "openthread", "joiner", "commissioner", "tcat", "meshcop", "panid"]
+        "beacon_types": [
+          "thread_beacon"
+        ],
+        "port_patterns": [
+          61631,
+          19788
+        ],
+        "string_patterns": [
+          "thread",
+          "openthread",
+          "joiner",
+          "commissioner",
+          "tcat",
+          "meshcop",
+          "panid"
+        ]
       },
-      "cve_tags": ["thread", "openthread"],
+      "cve_tags": [
+        "thread",
+        "openthread"
+      ],
       "notes": "UUID 0xFFFB=TCAT. Thread uses IEEE 802.15.4 channel + PANID. Commissioner port 49191."
     },
     {
@@ -51,14 +165,32 @@
       "name": "Zigbee / BLE Coexistence",
       "confidence_threshold": 50,
       "indicators": {
-        "service_uuids": ["0xFFF0", "0xFFF1"],
-        "ad_types": ["0xFF"],
-        "company_ids": ["0x1217", "0x0107"],
-        "beacon_types": ["manufacturer_specific"],
+        "service_uuids": [
+          "0xFFF0",
+          "0xFFF1"
+        ],
+        "ad_types": [
+          "0xFF"
+        ],
+        "company_ids": [
+          "0x1217",
+          "0x0107"
+        ],
+        "beacon_types": [
+          "manufacturer_specific"
+        ],
         "port_patterns": [],
-        "string_patterns": ["zigbee", "zdo", "zcl", "nwk_key", "link_key"]
+        "string_patterns": [
+          "zigbee",
+          "zdo",
+          "zcl",
+          "nwk_key",
+          "link_key"
+        ]
       },
-      "cve_tags": ["zigbee"],
+      "cve_tags": [
+        "zigbee"
+      ],
       "notes": "Silicon Labs (0x1217), Ember (0x0107). Zigbee runs on 802.15.4 but often paired with BLE gateway."
     },
     {
@@ -67,13 +199,25 @@
       "confidence_threshold": 40,
       "indicators": {
         "service_uuids": [],
-        "ad_types": ["0xFF"],
+        "ad_types": [
+          "0xFF"
+        ],
         "company_ids": [],
-        "beacon_types": ["manufacturer_specific"],
+        "beacon_types": [
+          "manufacturer_specific"
+        ],
         "port_patterns": [],
-        "string_patterns": ["mesh", "node", "gateway", "broadcast", "flood"]
+        "string_patterns": [
+          "mesh",
+          "node",
+          "gateway",
+          "broadcast",
+          "flood"
+        ]
       },
-      "cve_tags": ["proprietary"],
+      "cve_tags": [
+        "proprietary"
+      ],
       "notes": "Fallback: manufacturer-specific AD data with unknown company ID. Requires manual analysis."
     }
   ],
@@ -91,6 +235,20 @@
     "0x2A": "Mesh Message",
     "0x2B": "Mesh Beacon",
     "0x29": "PB-ADV",
-    "0xFF": "Manufacturer Specific Data"
+    "0xFF": "Manufacturer Specific Data",
+    "0x2C": "Mesh Beacon (PB-GATT related)"
+  },
+  "mesh_11_models": {
+    "0x0007": "Directed Forwarding Configuration Server",
+    "0x0008": "Directed Forwarding Configuration Client",
+    "0x000B": "Private Beacon Server",
+    "0x000F": "SAR Configuration Server",
+    "0x0013": "Large Composition Data Server"
+  },
+  "provisioning_auth_methods": {
+    "0x00": "No OOB - unauthenticated, MITM possible",
+    "0x01": "Static OOB - strongest",
+    "0x02": "Output OOB - strength depends on size",
+    "0x03": "Input OOB - strength depends on size"
   }
 }

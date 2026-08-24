@@ -30,7 +30,7 @@ class FirmwareInfo:
     strings: list[str] = field(default_factory=list)
     urls: list[str] = field(default_factory=list)
     ips: list[str] = field(default_factory=list)
-    credentials: list[dict] = field(default_factory=dict)
+    credentials: list[dict] = field(default_factory=list)
     crypto_keys: dict = field(default_factory=dict)
 
 

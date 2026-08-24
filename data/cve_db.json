@@ -1,10 +1,10 @@
 {
-  "version": "1.2",
-  "updated": "2026-04-30",
+  "version": "1.3",
+  "updated": "2026-08-19",
   "entries": [
     {
       "cve_id": "CVE-2020-12351",
-      "name": "BleedingTooth — A2MP Heap Type Confusion",
+      "name": "BleedingTooth \u2014 A2MP Heap Type Confusion",
       "affected_component": "Linux kernel bluetooth/a2mp.c",
       "affected_versions": "kernel < 5.9",
       "severity": "CRITICAL",
@@ -12,13 +12,25 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "A heap-based type confusion in process_l2cap_cmd() for A2MP CID 0x0003 allows an attacker in Bluetooth range to escalate privileges or execute code in kernel context.",
-      "tags": ["kernel", "bluetooth_classic", "heap", "rce", "lpe"],
-      "detection_hints": ["kernel < 5.9", "BlueZ < 5.54", "A2MP enabled"],
-      "references": ["https://github.com/google/security-research/security/advisories/GHSA-h637-c88j-47wq"]
+      "tags": [
+        "kernel",
+        "bluetooth_classic",
+        "heap",
+        "rce",
+        "lpe"
+      ],
+      "detection_hints": [
+        "kernel < 5.9",
+        "BlueZ < 5.54",
+        "A2MP enabled"
+      ],
+      "references": [
+        "https://github.com/google/security-research/security/advisories/GHSA-h637-c88j-47wq"
+      ]
     },
     {
       "cve_id": "CVE-2020-12352",
-      "name": "BleedingTooth — A2MP Info Leak",
+      "name": "BleedingTooth \u2014 A2MP Info Leak",
       "affected_component": "Linux kernel bluetooth/a2mp.c",
       "affected_versions": "kernel < 5.9",
       "severity": "MEDIUM",
@@ -26,13 +38,20 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "Improper access control in process_l2cap_cmd() leaks kernel stack memory via A2MP GetInfo response, useful for KASLR bypass.",
-      "tags": ["kernel", "bluetooth_classic", "info_leak", "kaslr_bypass"],
-      "detection_hints": ["kernel < 5.9"],
+      "tags": [
+        "kernel",
+        "bluetooth_classic",
+        "info_leak",
+        "kaslr_bypass"
+      ],
+      "detection_hints": [
+        "kernel < 5.9"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2020-10135",
-      "name": "BIAS — Bluetooth Impersonation Attack",
+      "name": "BIAS \u2014 Bluetooth Impersonation Attack",
       "affected_component": "Bluetooth Classic (HCI/LMP)",
       "affected_versions": "All legacy pairing implementations",
       "severity": "HIGH",
@@ -40,13 +59,20 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "Authentication procedure in Bluetooth Classic allows impersonation of a previously paired device without knowing the link key, by downgrading to legacy auth.",
-      "tags": ["bluetooth_classic", "authentication_bypass", "impersonation"],
-      "detection_hints": ["Bluetooth Classic device", "legacy pairing supported"],
+      "tags": [
+        "bluetooth_classic",
+        "authentication_bypass",
+        "impersonation"
+      ],
+      "detection_hints": [
+        "Bluetooth Classic device",
+        "legacy pairing supported"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2019-9506",
-      "name": "KNOB — Key Negotiation of Bluetooth",
+      "name": "KNOB \u2014 Key Negotiation of Bluetooth",
       "affected_component": "Bluetooth BR/EDR encryption negotiation",
       "affected_versions": "Bluetooth spec < 5.1",
       "severity": "HIGH",
@@ -54,22 +80,38 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "The encryption key length negotiation in Bluetooth BR/EDR can be forced to 1 byte by an active MitM attacker, enabling brute-force of the session key.",
-      "tags": ["bluetooth_classic", "encryption", "mitm", "brute_force"],
-      "detection_hints": ["BR/EDR device", "encryption negotiation not validated"],
+      "tags": [
+        "bluetooth_classic",
+        "encryption",
+        "mitm",
+        "brute_force"
+      ],
+      "detection_hints": [
+        "BR/EDR device",
+        "encryption negotiation not validated"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2023-24023",
-      "name": "BLUFFS — Bluetooth Forward & Future Secrecy",
+      "name": "BLUFFS \u2014 Bluetooth Forward & Future Secrecy",
       "affected_component": "Bluetooth BR/EDR session key derivation",
-      "affected_versions": "Bluetooth spec 4.2–5.4",
+      "affected_versions": "Bluetooth spec 4.2\u20135.4",
       "severity": "HIGH",
       "cvss": "6.8",
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "Multiple attacks against Bluetooth session key derivation break forward and future secrecy across sessions, enabling MitM and session decryption.",
-      "tags": ["bluetooth_classic", "session_key", "forward_secrecy", "mitm"],
-      "detection_hints": ["BR/EDR device", "Bluetooth 4.2–5.4"],
+      "tags": [
+        "bluetooth_classic",
+        "session_key",
+        "forward_secrecy",
+        "mitm"
+      ],
+      "detection_hints": [
+        "BR/EDR device",
+        "Bluetooth 4.2\u20135.4"
+      ],
       "references": []
     },
     {
@@ -82,13 +124,22 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "Use-after-free in l2cap_reassemble_sdu() in the Android kernel Bluetooth stack allows an attacker in Bluetooth range to execute code in kernel context.",
-      "tags": ["kernel", "ble", "l2cap", "use_after_free", "rce"],
-      "detection_hints": ["Android device", "kernel < 2022-10"],
+      "tags": [
+        "kernel",
+        "ble",
+        "l2cap",
+        "use_after_free",
+        "rce"
+      ],
+      "detection_hints": [
+        "Android device",
+        "kernel < 2022-10"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2021-28139",
-      "name": "BleedingBit — ESP32 BLE OOB Write",
+      "name": "BleedingBit \u2014 ESP32 BLE OOB Write",
       "affected_component": "Espressif ESP-IDF BLE stack",
       "affected_versions": "ESP-IDF < 4.4",
       "severity": "HIGH",
@@ -96,8 +147,21 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "Out-of-bounds write in Espressif's BLE stack via malformed L2CAP packet, allowing code execution on the ESP32 MCU.",
-      "tags": ["ble", "esp32", "l2cap", "oom_write", "rce"],
-      "detection_hints": ["ESP32 device", "ESP-IDF < 4.4"],
+      "tags": [
+        "ble",
+        "esp32",
+        "l2cap",
+        "oob_write",
+        "rce",
+        "espressif"
+      ],
+      "detection_hints": [
+        "ESP32 device",
+        "ESP-IDF < 4.4",
+        "ESP32",
+        "esp-idf",
+        "IDF_VER"
+      ],
       "references": []
     },
     {
@@ -109,9 +173,21 @@
       "cvss": "7.5",
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
-      "description": "Buffer overflow in Zephyr RTOS HCI layer via crafted BLE advertisement or connection packet.",
-      "tags": ["ble", "zephyr", "hci", "buffer_overflow", "rce"],
-      "detection_hints": ["Zephyr RTOS", "Zephyr < 2.1"],
+      "description": "Buffer overflow in Zephyr RTOS HCI layer via crafted BLE advertisement. Allows memory corruption on Zephyr-based BLE devices.",
+      "tags": [
+        "ble",
+        "zephyr",
+        "hci",
+        "buffer_overflow",
+        "rce"
+      ],
+      "detection_hints": [
+        "Zephyr RTOS",
+        "Zephyr < 2.1",
+        "Zephyr",
+        "CONFIG_BT",
+        "k_thread_create"
+      ],
       "references": []
     },
     {
@@ -124,8 +200,15 @@
       "attack_vector": "Local",
       "auth_required": true,
       "description": "BlueZ sdptool contains a command injection vulnerability. Not directly remotely exploitable but relevant in post-exploitation or toolchain context.",
-      "tags": ["bluez", "sdptool", "command_injection", "local"],
-      "detection_hints": ["BlueZ < 5.61"],
+      "tags": [
+        "bluez",
+        "sdptool",
+        "command_injection",
+        "local"
+      ],
+      "detection_hints": [
+        "BlueZ < 5.61"
+      ],
       "references": []
     },
     {
@@ -138,8 +221,16 @@
       "attack_vector": "Network (container breakout)",
       "auth_required": false,
       "description": "runc allows a malicious container to overwrite the host runc binary via /proc/self/exe, enabling host escape with root privileges.",
-      "tags": ["container", "runc", "privilege_escalation", "host_escape"],
-      "detection_hints": ["runc 1.0.0-rc6", "Docker < 18.09.2"],
+      "tags": [
+        "container",
+        "runc",
+        "privilege_escalation",
+        "host_escape"
+      ],
+      "detection_hints": [
+        "runc 1.0.0-rc6",
+        "Docker < 18.09.2"
+      ],
       "references": []
     },
     {
@@ -152,8 +243,15 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "Out-of-bounds read in BlueZ L2CAP leads to information disclosure. May expose kernel addresses for KASLR bypass.",
-      "tags": ["bluez", "l2cap", "info_leak", "out_of_bounds_read"],
-      "detection_hints": ["BlueZ < 5.56"],
+      "tags": [
+        "bluez",
+        "l2cap",
+        "info_leak",
+        "out_of_bounds_read"
+      ],
+      "detection_hints": [
+        "BlueZ < 5.56"
+      ],
       "references": []
     },
     {
@@ -166,8 +264,15 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "Use-after-free in BlueZ GATT database triggered by a BLE peer disconnecting during service enumeration.",
-      "tags": ["bluez", "gatt", "use_after_free", "ble"],
-      "detection_hints": ["BlueZ < 5.61"],
+      "tags": [
+        "bluez",
+        "gatt",
+        "use_after_free",
+        "ble"
+      ],
+      "detection_hints": [
+        "BlueZ < 5.61"
+      ],
       "references": []
     },
     {
@@ -180,8 +285,15 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "Heap-based buffer overflow in BlueZ A2DP profile via a malformed A2MP command, exploitable without authentication.",
-      "tags": ["bluez", "a2mp", "heap_overflow", "bluetooth_classic"],
-      "detection_hints": ["BlueZ < 5.55"],
+      "tags": [
+        "bluez",
+        "a2mp",
+        "heap_overflow",
+        "bluetooth_classic"
+      ],
+      "detection_hints": [
+        "BlueZ < 5.55"
+      ],
       "references": []
     },
     {
@@ -194,13 +306,20 @@
       "attack_vector": "Local",
       "auth_required": true,
       "description": "Incomplete authorization check in BlueZ D-Bus interface allows local users to pair devices or access sensitive operations without proper permissions.",
-      "tags": ["bluez", "dbus", "authorization_bypass", "local"],
-      "detection_hints": ["BlueZ < 5.64"],
+      "tags": [
+        "bluez",
+        "dbus",
+        "authorization_bypass",
+        "local"
+      ],
+      "detection_hints": [
+        "BlueZ < 5.64"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2023-45866",
-      "name": "BlueDucky — HID injection via unauthenticated BLE pairing",
+      "name": "BlueDucky \u2014 HID injection via unauthenticated BLE pairing",
       "affected_component": "Android / Linux BLE HID pairing",
       "affected_versions": "Android < 2023-12 patch, BlueZ < 5.71",
       "severity": "HIGH",
@@ -208,13 +327,22 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "An unauthenticated BLE device can pair as an HID keyboard without confirmation and inject keystrokes to the victim device.",
-      "tags": ["ble", "hid", "keystroke_injection", "no_auth"],
-      "detection_hints": ["Android device", "BlueZ < 5.71", "HID profile enabled"],
+      "tags": [
+        "ble",
+        "hid",
+        "keystroke_injection",
+        "no_auth"
+      ],
+      "detection_hints": [
+        "Android device",
+        "BlueZ < 5.71",
+        "HID profile enabled"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2024-24576",
-      "name": "SweynTooth — BLE Link Layer length overflow family",
+      "name": "SweynTooth \u2014 BLE Link Layer length overflow family",
       "affected_component": "Multiple BLE SoC SDKs (nRF5, TI CC26x2, Cypress, Dialog)",
       "affected_versions": "Various SoC SDKs pre-2020",
       "severity": "HIGH",
@@ -222,22 +350,42 @@
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "A family of BLE Link Layer vulnerabilities in major SoC SDKs, including length overflow and invalid length fields causing crashes or bypassing pairing.",
-      "tags": ["ble", "link_layer", "soc", "buffer_overflow", "crash"],
-      "detection_hints": ["nRF5 SoC", "TI CC26x2", "Cypress CYW", "Dialog DA14"],
+      "tags": [
+        "ble",
+        "link_layer",
+        "soc",
+        "buffer_overflow",
+        "crash"
+      ],
+      "detection_hints": [
+        "nRF5 SoC",
+        "TI CC26x2",
+        "Cypress CYW",
+        "Dialog DA14"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2020-15802",
-      "name": "BLURtooth — CTKD key overwrite",
+      "name": "BLURtooth \u2014 CTKD key overwrite",
       "affected_component": "Bluetooth Cross-Transport Key Derivation (CTKD)",
-      "affected_versions": "Bluetooth 4.2–5.0 CTKD implementations",
+      "affected_versions": "Bluetooth 4.2\u20135.0 CTKD implementations",
       "severity": "MEDIUM",
       "cvss": "5.9",
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "CTKD allows overwriting existing pairing keys during dual-mode connection, enabling impersonation of already-paired devices.",
-      "tags": ["bluetooth_classic", "ble", "ctkd", "key_overwrite", "impersonation"],
-      "detection_hints": ["Dual-mode BT device", "Bluetooth 4.2–5.0"],
+      "tags": [
+        "bluetooth_classic",
+        "ble",
+        "ctkd",
+        "key_overwrite",
+        "impersonation"
+      ],
+      "detection_hints": [
+        "Dual-mode BT device",
+        "Bluetooth 4.2\u20135.0"
+      ],
       "references": []
     },
     {
@@ -250,13 +398,20 @@
       "attack_vector": "Local",
       "auth_required": true,
       "description": "Use-after-free in Linux kernel mm subsystem. Combined with IoT devices having local unprivileged user, can be chained for LPE.",
-      "tags": ["kernel", "lpe", "use_after_free", "mm"],
-      "detection_hints": ["kernel < 5.16.18"],
+      "tags": [
+        "kernel",
+        "lpe",
+        "use_after_free",
+        "mm"
+      ],
+      "detection_hints": [
+        "kernel < 5.16.18"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2021-33909",
-      "name": "Sequoia — Linux filesystem size_t-to-int overflow",
+      "name": "Sequoia \u2014 Linux filesystem size_t-to-int overflow",
       "affected_component": "Linux kernel fs/seq_file.c",
       "affected_versions": "kernel < 5.13.4",
       "severity": "HIGH",
@@ -264,13 +419,20 @@
       "attack_vector": "Local",
       "auth_required": true,
       "description": "size_t-to-int conversion overflow in seq_file allows unprivileged local users to write out-of-bounds to kernel memory, achieving root.",
-      "tags": ["kernel", "lpe", "integer_overflow", "local"],
-      "detection_hints": ["kernel < 5.13.4"],
+      "tags": [
+        "kernel",
+        "lpe",
+        "integer_overflow",
+        "local"
+      ],
+      "detection_hints": [
+        "kernel < 5.13.4"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2021-4034",
-      "name": "PwnKit — pkexec local privilege escalation",
+      "name": "PwnKit \u2014 pkexec local privilege escalation",
       "affected_component": "polkit pkexec",
       "affected_versions": "polkit < 0.120",
       "severity": "HIGH",
@@ -278,8 +440,16 @@
       "attack_vector": "Local",
       "auth_required": true,
       "description": "Out-of-bounds write in pkexec argv[0] handling allows any local user to escalate to root.",
-      "tags": ["lpe", "polkit", "pkexec", "local"],
-      "detection_hints": ["polkit < 0.120", "pkexec installed"],
+      "tags": [
+        "lpe",
+        "polkit",
+        "pkexec",
+        "local"
+      ],
+      "detection_hints": [
+        "polkit < 0.120",
+        "pkexec installed"
+      ],
       "references": []
     },
     {
@@ -292,8 +462,16 @@
       "attack_vector": "Local",
       "auth_required": false,
       "description": "Race condition in polkit D-Bus message handling allows any unprivileged user to create new privileged account without authentication.",
-      "tags": ["lpe", "polkit", "dbus", "race_condition"],
-      "detection_hints": ["polkit < 0.119", "specific distro builds"],
+      "tags": [
+        "lpe",
+        "polkit",
+        "dbus",
+        "race_condition"
+      ],
+      "detection_hints": [
+        "polkit < 0.119",
+        "specific distro builds"
+      ],
       "references": []
     },
     {
@@ -306,8 +484,17 @@
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Unauthenticated command injection in Dasan GPON router diagnostic endpoint. Common in industrial IoT gateways repackaging similar firmware.",
-      "tags": ["iot", "gateway", "command_injection", "no_auth", "rce"],
-      "detection_hints": ["/GponForm/diag_Form endpoint", "Dasan firmware"],
+      "tags": [
+        "iot",
+        "gateway",
+        "command_injection",
+        "no_auth",
+        "rce"
+      ],
+      "detection_hints": [
+        "/GponForm/diag_Form endpoint",
+        "Dasan firmware"
+      ],
       "references": []
     },
     {
@@ -320,8 +507,16 @@
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Wirepas Gateway Python SDK ships with outdated protobuf dependency vulnerable to deserialization RCE. Exploitable via gRPC endpoint.",
-      "tags": ["wirepas", "grpc", "deserialization", "rce"],
-      "detection_hints": ["wirepas-gateway < 1.4", "gRPC port 5000-5002"],
+      "tags": [
+        "wirepas",
+        "grpc",
+        "deserialization",
+        "rce"
+      ],
+      "detection_hints": [
+        "wirepas-gateway < 1.4",
+        "gRPC port 5000-5002"
+      ],
       "references": []
     },
     {
@@ -333,9 +528,17 @@
       "cvss": "8.8",
       "attack_vector": "Network",
       "auth_required": false,
-      "description": "Included for reference — IoT devices with embedded browsers (dashboards) may expose this.",
-      "tags": ["browser", "v8", "type_confusion", "rce"],
-      "detection_hints": ["Chromium embedded browser", "Chrome < 114"],
+      "description": "Included for reference \u2014 IoT devices with embedded browsers (dashboards) may expose this.",
+      "tags": [
+        "browser",
+        "v8",
+        "type_confusion",
+        "rce"
+      ],
+      "detection_hints": [
+        "Chromium embedded browser",
+        "Chrome < 114"
+      ],
       "references": []
     },
     {
@@ -348,8 +551,18 @@
       "attack_vector": "Network",
       "auth_required": true,
       "description": "Eclipse Kura IoT framework exposes a REST endpoint /kura/rest/v1/services/command that executes arbitrary shell commands when authenticated with default admin/admin credentials.",
-      "tags": ["kura", "iot", "command_injection", "rce", "default_creds"],
-      "detection_hints": ["Eclipse Kura", "port 443/80", "default admin/admin"],
+      "tags": [
+        "kura",
+        "iot",
+        "command_injection",
+        "rce",
+        "default_creds"
+      ],
+      "detection_hints": [
+        "Eclipse Kura",
+        "port 443/80",
+        "default admin/admin"
+      ],
       "references": []
     },
     {
@@ -362,8 +575,16 @@
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Malformed SUBSCRIBE packet causes Mosquitto to crash, resulting in denial of service for all connected IoT devices.",
-      "tags": ["mqtt", "mosquitto", "dos", "crash"],
-      "detection_hints": ["Mosquitto < 2.0.15", "MQTT port 1883/8883"],
+      "tags": [
+        "mqtt",
+        "mosquitto",
+        "dos",
+        "crash"
+      ],
+      "detection_hints": [
+        "Mosquitto < 2.0.15",
+        "MQTT port 1883/8883"
+      ],
       "references": []
     },
     {
@@ -376,8 +597,16 @@
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Improper handling in Linux SCSI target subsystem. Relevant for IoT devices with iSCSI storage. Can lead to arbitrary read/write of kernel memory.",
-      "tags": ["kernel", "scsi", "info_leak", "rce"],
-      "detection_hints": ["kernel < 5.10.7", "iSCSI enabled"],
+      "tags": [
+        "kernel",
+        "scsi",
+        "info_leak",
+        "rce"
+      ],
+      "detection_hints": [
+        "kernel < 5.10.7",
+        "iSCSI enabled"
+      ],
       "references": []
     },
     {
@@ -390,8 +619,16 @@
       "attack_vector": "Local",
       "auth_required": true,
       "description": "Heap out-of-bounds write in Linux netfilter via XT_ALIGN. Local LPE to root; useful in post-exploitation after initial access on IoT.",
-      "tags": ["kernel", "netfilter", "lpe", "heap_write"],
-      "detection_hints": ["kernel < 5.12", "iptables/netfilter"],
+      "tags": [
+        "kernel",
+        "netfilter",
+        "lpe",
+        "heap_write"
+      ],
+      "detection_hints": [
+        "kernel < 5.12",
+        "iptables/netfilter"
+      ],
       "references": []
     },
     {
@@ -404,8 +641,16 @@
       "attack_vector": "Adjacent (WiFi)",
       "auth_required": false,
       "description": "Design flaw in 802.11 allows connecting a client to a wrong network by using same BSSID and credentials. Affects IoT gateways with WiFi management.",
-      "tags": ["wifi", "ssid", "mitm", "design_flaw"],
-      "detection_hints": ["WiFi-enabled IoT device", "WPA2/WPA3"],
+      "tags": [
+        "wifi",
+        "ssid",
+        "mitm",
+        "design_flaw"
+      ],
+      "detection_hints": [
+        "WiFi-enabled IoT device",
+        "WPA2/WPA3"
+      ],
       "references": []
     },
     {
@@ -418,50 +663,86 @@
       "attack_vector": "Local",
       "auth_required": true,
       "description": "Use-after-free in USB gadget configfs. On IoT devices where attacker can connect USB peripheral, enables LPE.",
-      "tags": ["kernel", "usb", "lpe", "use_after_free"],
-      "detection_hints": ["kernel < 6.1", "USB gadget enabled"],
+      "tags": [
+        "kernel",
+        "usb",
+        "lpe",
+        "use_after_free"
+      ],
+      "detection_hints": [
+        "kernel < 6.1",
+        "USB gadget enabled"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2021-0129",
       "name": "BLE improper access control in pairing",
       "affected_component": "Bluetooth LE pairing (spec level)",
-      "affected_versions": "Bluetooth 2.1–5.2",
+      "affected_versions": "Bluetooth 2.1\u20135.2",
       "severity": "MEDIUM",
       "cvss": "5.7",
       "attack_vector": "Adjacent (Bluetooth)",
       "auth_required": false,
       "description": "Improper access control during Bluetooth pairing allows an unauthenticated attacker to bypass authentication for previously bonded devices.",
-      "tags": ["ble", "pairing", "authentication_bypass"],
-      "detection_hints": ["BLE device", "Bluetooth 2.1–5.2"],
+      "tags": [
+        "ble",
+        "pairing",
+        "authentication_bypass"
+      ],
+      "detection_hints": [
+        "BLE device",
+        "Bluetooth 2.1\u20135.2"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2019-12255",
-      "name": "URGENT/11 — VxWorks IPnet TCP Urgent Pointer OOB Read",
+      "name": "URGENT/11 \u2014 VxWorks IPnet TCP Urgent Pointer OOB Read",
       "affected_component": "Wind River VxWorks IPnet TCP/IP stack",
-      "affected_versions": "VxWorks 6.5–6.9.4 + URGENT/11 family",
+      "affected_versions": "VxWorks 6.5\u20136.9.4 + URGENT/11 family",
       "severity": "CRITICAL",
       "cvss": "9.8",
       "attack_vector": "Network",
       "auth_required": false,
       "description": "One of 11 URGENT/11 vulnerabilities in VxWorks IPnet stack. Heap overflow via TCP urgent pointer allows unauthenticated RCE. Affects industrial controllers, medical devices, SCADA.",
-      "tags": ["vxworks", "urgent11", "tcp", "heap_overflow", "rce", "ics"],
-      "detection_hints": ["VxWorks", "Wind River", "IPnet TCP stack"],
+      "tags": [
+        "vxworks",
+        "urgent11",
+        "tcp",
+        "heap_overflow",
+        "rce",
+        "ics"
+      ],
+      "detection_hints": [
+        "VxWorks",
+        "Wind River",
+        "IPnet TCP stack"
+      ],
       "references": []
     },
     {
       "cve_id": "CVE-2019-12256",
-      "name": "URGENT/11 — VxWorks IPnet IPv4 Options Stack Overflow",
+      "name": "URGENT/11 \u2014 VxWorks IPnet IPv4 Options Stack Overflow",
       "affected_component": "Wind River VxWorks IPnet IPv4",
-      "affected_versions": "VxWorks 6.5–6.9.4",
+      "affected_versions": "VxWorks 6.5\u20136.9.4",
       "severity": "CRITICAL",
       "cvss": "9.8",
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Stack overflow in IPv4 options parsing in VxWorks IPnet. Unauthenticated remote code execution via crafted IP packet.",
-      "tags": ["vxworks", "urgent11", "ipv4", "stack_overflow", "rce", "ics"],
-      "detection_hints": ["VxWorks", "IPnet stack"],
+      "tags": [
+        "vxworks",
+        "urgent11",
+        "ipv4",
+        "stack_overflow",
+        "rce",
+        "ics"
+      ],
+      "detection_hints": [
+        "VxWorks",
+        "IPnet stack"
+      ],
       "references": []
     },
     {
@@ -474,8 +755,18 @@
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Multiple heap and stack overflow vulnerabilities in FreeRTOS+TCP. Crafted TCP/IP packets trigger buffer overflows allowing unauthenticated RCE on embedded devices running FreeRTOS.",
-      "tags": ["freertos", "tcp", "heap_overflow", "rce", "embedded"],
-      "detection_hints": ["FreeRTOS", "FreeRTOS+TCP", "xTaskCreate"],
+      "tags": [
+        "freertos",
+        "tcp",
+        "heap_overflow",
+        "rce",
+        "embedded"
+      ],
+      "detection_hints": [
+        "FreeRTOS",
+        "FreeRTOS+TCP",
+        "xTaskCreate"
+      ],
       "references": []
     },
     {
@@ -488,8 +779,18 @@
       "attack_vector": "Physical (USB)",
       "auth_required": false,
       "description": "Buffer overflow in Zephyr USB Device Firmware Upgrade class. Attacker with physical USB access can overwrite memory and execute arbitrary code.",
-      "tags": ["zephyr", "usb", "dfu", "buffer_overflow", "rce"],
-      "detection_hints": ["Zephyr", "CONFIG_USB_DFU_CLASS", "k_thread_create"],
+      "tags": [
+        "zephyr",
+        "usb",
+        "dfu",
+        "buffer_overflow",
+        "rce"
+      ],
+      "detection_hints": [
+        "Zephyr",
+        "CONFIG_USB_DFU_CLASS",
+        "k_thread_create"
+      ],
       "references": []
     },
     {
@@ -502,8 +803,18 @@
       "attack_vector": "Adjacent (BLE/Serial)",
       "auth_required": false,
       "description": "Stack-based buffer overflow in Zephyr shell via overly long command string. Accessible over BLE or UART shell interface.",
-      "tags": ["zephyr", "shell", "stack_overflow", "rce", "ble"],
-      "detection_hints": ["Zephyr", "CONFIG_SHELL", "zephyr_"],
+      "tags": [
+        "zephyr",
+        "shell",
+        "stack_overflow",
+        "rce",
+        "ble"
+      ],
+      "detection_hints": [
+        "Zephyr",
+        "CONFIG_SHELL",
+        "zephyr_"
+      ],
       "references": []
     },
     {
@@ -516,8 +827,18 @@
       "attack_vector": "Network (TFTP boot) / Local",
       "auth_required": false,
       "description": "Buffer overflow in U-Boot i2c subsystem allows arbitrary code execution during boot. Exploitable via malicious TFTP image or local console.",
-      "tags": ["uboot", "bootloader", "buffer_overflow", "rce", "embedded"],
-      "detection_hints": ["U-Boot", "uboot", "27051956 magic"],
+      "tags": [
+        "uboot",
+        "bootloader",
+        "buffer_overflow",
+        "rce",
+        "embedded"
+      ],
+      "detection_hints": [
+        "U-Boot",
+        "uboot",
+        "27051956 magic"
+      ],
       "references": []
     },
     {
@@ -530,8 +851,18 @@
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Buffer overflow in U-Boot TFTP client when processing large UDP fragmented packets. Exploitable from local network during PXE/TFTP boot.",
-      "tags": ["uboot", "bootloader", "tftp", "buffer_overflow", "rce"],
-      "detection_hints": ["U-Boot", "TFTP", "uboot_fit format"],
+      "tags": [
+        "uboot",
+        "bootloader",
+        "tftp",
+        "buffer_overflow",
+        "rce"
+      ],
+      "detection_hints": [
+        "U-Boot",
+        "TFTP",
+        "uboot_fit format"
+      ],
       "references": []
     },
     {
@@ -544,8 +875,20 @@
       "attack_vector": "Adjacent (IEEE 802.15.4)",
       "auth_required": false,
       "description": "Buffer overflow in Contiki-NG 6LoWPAN fragmentation reassembly. Crafted 802.15.4 packets cause heap overflow, enabling code execution on embedded nodes.",
-      "tags": ["contiki", "6lowpan", "heap_overflow", "rce", "iot", "mesh"],
-      "detection_hints": ["contiki", "PROCESS_BEGIN", "sicslowpan", "uip_"],
+      "tags": [
+        "contiki",
+        "6lowpan",
+        "heap_overflow",
+        "rce",
+        "iot",
+        "mesh"
+      ],
+      "detection_hints": [
+        "contiki",
+        "PROCESS_BEGIN",
+        "sicslowpan",
+        "uip_"
+      ],
       "references": []
     },
     {
@@ -558,22 +901,18 @@
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Out-of-bounds read in Contiki-NG MQTT client allows a malicious broker to crash IoT nodes or leak memory contents.",
-      "tags": ["contiki", "mqtt", "out_of_bounds_read", "dos", "info_leak"],
-      "detection_hints": ["contiki", "PROCESS_BEGIN", "mqtt"],
-      "references": []
-    },
-    {
-      "cve_id": "CVE-2021-28139",
-      "name": "ESP-IDF BLE Out-of-Bounds Write",
-      "affected_component": "Espressif ESP-IDF BLE stack",
-      "affected_versions": "ESP-IDF < 4.4",
-      "severity": "HIGH",
-      "cvss": "8.0",
-      "attack_vector": "Adjacent (Bluetooth)",
-      "auth_required": false,
-      "description": "Out-of-bounds write in Espressif ESP-IDF BLE stack via malformed L2CAP packet. Allows code execution on ESP32 MCU.",
-      "tags": ["esp32", "espressif", "ble", "l2cap", "oob_write", "rce"],
-      "detection_hints": ["ESP32", "esp-idf", "IDF_VER"],
+      "tags": [
+        "contiki",
+        "mqtt",
+        "out_of_bounds_read",
+        "dos",
+        "info_leak"
+      ],
+      "detection_hints": [
+        "contiki",
+        "PROCESS_BEGIN",
+        "mqtt"
+      ],
       "references": []
     },
     {
@@ -586,8 +925,20 @@
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Multiple integer overflows and buffer overflows in Azure RTOS NetX Duo TCP/IP stack. Unauthenticated RCE via crafted network packets on embedded devices running ThreadX.",
-      "tags": ["threadx", "azure_rtos", "netx", "tcp", "buffer_overflow", "rce"],
-      "detection_hints": ["ThreadX", "tx_thread_create", "NetX", "Azure RTOS"],
+      "tags": [
+        "threadx",
+        "azure_rtos",
+        "netx",
+        "tcp",
+        "buffer_overflow",
+        "rce"
+      ],
+      "detection_hints": [
+        "ThreadX",
+        "tx_thread_create",
+        "NetX",
+        "Azure RTOS"
+      ],
       "references": []
     },
     {
@@ -600,22 +951,20 @@
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Heap buffer overflow in Mbed TLS X.509 certificate parser. Malformed certificate triggers overflow, potential RCE on embedded TLS clients.",
-      "tags": ["mbed", "mbedtls", "x509", "heap_overflow", "rce", "tls"],
-      "detection_hints": ["mbed", "mbedtls_", "MBED_", "Mbed TLS"],
-      "references": []
-    },
-    {
-      "cve_id": "CVE-2019-16336",
-      "name": "Zephyr BLE HCI Buffer Overflow",
-      "affected_component": "Zephyr RTOS Bluetooth HCI driver",
-      "affected_versions": "Zephyr < 2.1",
-      "severity": "HIGH",
-      "cvss": "7.5",
-      "attack_vector": "Adjacent (Bluetooth)",
-      "auth_required": false,
-      "description": "Buffer overflow in Zephyr RTOS HCI layer via crafted BLE advertisement. Allows memory corruption on Zephyr-based BLE devices.",
-      "tags": ["zephyr", "ble", "hci", "buffer_overflow", "rce"],
-      "detection_hints": ["Zephyr", "CONFIG_BT", "k_thread_create"],
+      "tags": [
+        "mbed",
+        "mbedtls",
+        "x509",
+        "heap_overflow",
+        "rce",
+        "tls"
+      ],
+      "detection_hints": [
+        "mbed",
+        "mbedtls_",
+        "MBED_",
+        "Mbed TLS"
+      ],
       "references": []
     },
     {
@@ -628,8 +977,17 @@
       "attack_vector": "Network",
       "auth_required": false,
       "description": "Infinite loop in OPC UA .NET stack certificate validation. Relevant for industrial IoT gateways exposing OPC UA (port 4840).",
-      "tags": ["opcua", "ics", "dos", "industrial"],
-      "detection_hints": ["OPC UA", "port 4840", "industrial gateway"],
+      "tags": [
+        "opcua",
+        "ics",
+        "dos",
+        "industrial"
+      ],
+      "detection_hints": [
+        "OPC UA",
+        "port 4840",
+        "industrial gateway"
+      ],
       "references": []
     },
     {
@@ -642,9 +1000,229 @@
       "attack_vector": "Local",
       "auth_required": true,
       "description": "sudo sudoedit allows privilege escalation via EDITOR variable manipulation. Common on embedded Linux gateways where sudo is present.",
-      "tags": ["sudo", "lpe", "linux_embedded", "local"],
-      "detection_hints": ["sudo", "embedded Linux", "Linux version"],
+      "tags": [
+        "sudo",
+        "lpe",
+        "linux_embedded",
+        "local"
+      ],
+      "detection_hints": [
+        "sudo",
+        "embedded Linux",
+        "Linux version"
+      ],
       "references": []
+    },
+    {
+      "cve_id": "CVE-2020-26560",
+      "name": "BLE Mesh Provisioning \u2014 Impersonation Attack",
+      "affected_component": "Bluetooth Mesh Profile 1.0.1 provisioning",
+      "affected_versions": "Mesh Profile 1.0 and 1.0.1",
+      "severity": "CRITICAL",
+      "cvss": "8.1",
+      "attack_vector": "Adjacent (Bluetooth)",
+      "auth_required": false,
+      "description": "An attacker within range of a provisioner and a device being provisioned can impersonate the device and complete the exchange, obtaining the NetKey. Requires the AuthValue to be known, guessable, or absent (the No OOB method), which is the common default in shipped products.",
+      "tags": [
+        "ble_mesh_sig",
+        "mesh_provisioning",
+        "impersonation",
+        "netkey",
+        "mitm"
+      ],
+      "detection_hints": [
+        "SIG Mesh provisioning observed",
+        "No OOB authentication method"
+      ],
+      "references": [
+        "https://www.bluetooth.com/learn-about-bluetooth/key-attributes/bluetooth-security/reporting-security/"
+      ]
+    },
+    {
+      "cve_id": "CVE-2020-26559",
+      "name": "BLE Mesh Provisioning \u2014 AuthValue Leak",
+      "affected_component": "Bluetooth Mesh Profile 1.0.1 provisioning",
+      "affected_versions": "Mesh Profile 1.0 and 1.0.1",
+      "severity": "HIGH",
+      "cvss": "7.5",
+      "attack_vector": "Adjacent (Bluetooth)",
+      "auth_required": false,
+      "description": "A device being provisioned can leak the AuthValue to an attacker who initiates provisioning before the legitimate provisioner. Once the AuthValue is known the attacker completes the exchange and receives the NetKey.",
+      "tags": [
+        "ble_mesh_sig",
+        "mesh_provisioning",
+        "info_leak",
+        "authvalue",
+        "netkey"
+      ],
+      "detection_hints": [
+        "SIG Mesh provisioning observed",
+        "PB-ADV or PB-GATT reachable"
+      ],
+      "references": []
+    },
+    {
+      "cve_id": "CVE-2020-26557",
+      "name": "BLE Mesh Provisioning \u2014 Predictable AuthValue",
+      "affected_component": "Bluetooth Mesh Profile 1.0.1 provisioning",
+      "affected_versions": "Mesh Profile 1.0 and 1.0.1",
+      "severity": "HIGH",
+      "cvss": "7.5",
+      "attack_vector": "Adjacent (Bluetooth)",
+      "auth_required": false,
+      "description": "Implementations that use a fixed or predictable AuthValue let an attacker brute-force it offline from a captured Provisioning Confirmation PDU, then complete provisioning as a legitimate party and obtain the NetKey. Short Output/Input OOB sizes make the search space trivially small.",
+      "tags": [
+        "ble_mesh_sig",
+        "mesh_provisioning",
+        "brute_force",
+        "authvalue",
+        "weak_crypto"
+      ],
+      "detection_hints": [
+        "SIG Mesh provisioning observed",
+        "Output OOB size <= 4 digits"
+      ],
+      "references": []
+    },
+    {
+      "cve_id": "CVE-2020-26556",
+      "name": "BLE Mesh Provisioning \u2014 Malleable Commitment",
+      "affected_component": "Bluetooth Mesh Profile 1.0.1 provisioning",
+      "affected_versions": "Mesh Profile 1.0 and 1.0.1",
+      "severity": "HIGH",
+      "cvss": "7.5",
+      "attack_vector": "Adjacent (Bluetooth)",
+      "auth_required": false,
+      "description": "The provisioning commitment is malleable: an attacker can craft alternate values that satisfy the confirmation check, letting them complete provisioning without knowing the AuthValue and obtain the NetKey.",
+      "tags": [
+        "ble_mesh_sig",
+        "mesh_provisioning",
+        "weak_crypto",
+        "authentication_bypass"
+      ],
+      "detection_hints": [
+        "SIG Mesh provisioning observed"
+      ],
+      "references": []
+    },
+    {
+      "cve_id": "CVE-2020-26558",
+      "name": "Passkey Entry Impersonation (LE Secure Connections and Mesh)",
+      "affected_component": "Bluetooth LE Secure Connections / Mesh provisioning Passkey Entry",
+      "affected_versions": "Bluetooth Core 2.1 through 5.2, Mesh Profile 1.0 and 1.0.1",
+      "severity": "MEDIUM",
+      "cvss": "5.4",
+      "attack_vector": "Adjacent (Bluetooth)",
+      "auth_required": false,
+      "description": "In Passkey Entry pairing, a machine-in-the-middle can learn the passkey one bit per round by reflecting the peer's public key, then complete authenticated pairing or provisioning while impersonating both sides.",
+      "tags": [
+        "ble",
+        "ble_mesh_sig",
+        "mesh_provisioning",
+        "pairing",
+        "mitm",
+        "impersonation"
+      ],
+      "detection_hints": [
+        "Input OOB or Output OOB authentication in use"
+      ],
+      "references": []
+    },
+    {
+      "cve_id": "CVE-2020-26555",
+      "name": "BR/EDR PIN Pairing Impersonation",
+      "affected_component": "Bluetooth BR/EDR legacy PIN pairing",
+      "affected_versions": "Bluetooth Core 1.0B through 5.2",
+      "severity": "MEDIUM",
+      "cvss": "5.4",
+      "attack_vector": "Adjacent (Bluetooth)",
+      "auth_required": false,
+      "description": "An attacker can spoof the BD_ADDR of a peer and complete legacy PIN pairing without knowing the PIN, establishing an authenticated link key with the victim. Relevant to gateways that keep BR/EDR enabled alongside BLE Mesh.",
+      "tags": [
+        "bluetooth_classic",
+        "pairing",
+        "impersonation",
+        "authentication_bypass"
+      ],
+      "detection_hints": [
+        "Bluetooth Classic device",
+        "legacy pairing supported"
+      ],
+      "references": []
+    },
+    {
+      "cve_id": "CVE-2020-10061",
+      "name": "Zephyr BLE Mesh \u2014 Provisioning PDU Length Buffer Overflow",
+      "affected_component": "Zephyr RTOS Bluetooth Mesh provisioning",
+      "affected_versions": "Zephyr < 2.2.0 (and 1.14 LTS < 1.14.2)",
+      "severity": "HIGH",
+      "cvss": "8.8",
+      "attack_vector": "Adjacent (Bluetooth)",
+      "auth_required": false,
+      "description": "Improper handling of the length field of an incoming Bluetooth Mesh provisioning PDU allows an unauthenticated attacker in range to overflow a buffer, causing memory corruption and potentially code execution on the node.",
+      "tags": [
+        "zephyr",
+        "ble_mesh_sig",
+        "mesh_provisioning",
+        "buffer_overflow",
+        "rce"
+      ],
+      "detection_hints": [
+        "Zephyr RTOS detected",
+        "SIG Mesh provisioning reachable"
+      ],
+      "references": [
+        "https://github.com/zephyrproject-rtos/zephyr/security/advisories"
+      ]
+    },
+    {
+      "cve_id": "CVE-2021-3430",
+      "name": "Zephyr BLE Mesh \u2014 Provisioning Link Assertion (DoS)",
+      "affected_component": "Zephyr RTOS Bluetooth Mesh provisioning",
+      "affected_versions": "Zephyr <= 2.5.0",
+      "severity": "MEDIUM",
+      "cvss": "6.5",
+      "attack_vector": "Adjacent (Bluetooth)",
+      "auth_required": false,
+      "description": "Repeatedly opening a Bluetooth Mesh provisioning link reaches an assertion in the provisioning state machine and halts the node. An attacker in range can keep a node permanently offline without any key material.",
+      "tags": [
+        "zephyr",
+        "ble_mesh_sig",
+        "mesh_provisioning",
+        "dos",
+        "assertion"
+      ],
+      "detection_hints": [
+        "Zephyr RTOS detected",
+        "PB-ADV or PB-GATT reachable"
+      ],
+      "references": []
+    },
+    {
+      "cve_id": "BT-MESH-DF-2025",
+      "name": "Directed Forwarding routing manipulation (research, no CVE assigned)",
+      "affected_component": "Bluetooth Mesh Protocol 1.1 Directed Forwarding",
+      "affected_versions": "Mesh Protocol 1.1 implementations with Directed Forwarding enabled",
+      "severity": "MEDIUM",
+      "cvss": "",
+      "attack_vector": "Adjacent (Bluetooth), NetKey required",
+      "auth_required": true,
+      "description": "Directed Forwarding replaces managed flooding with explicit paths built by a path-discovery exchange. That exchange creates routing state other nodes can influence. A party holding a valid NetKey - including a compromised, salvaged or resold node - can inject path control messages so it becomes the forwarder for a chosen destination and then discard that traffic, producing targeted denial of service and topology manipulation that managed flooding has no equivalent state for. Published as 'Tous les chemins menent a DROP' at SSTIC 2025 by Tali, Cayre, Nicomette and Auriol (LAAS-CNRS).",
+      "tags": [
+        "ble_mesh_sig",
+        "mesh_df",
+        "routing",
+        "dos",
+        "topology_manipulation"
+      ],
+      "detection_hints": [
+        "Directed Forwarding models present",
+        "Mesh Protocol 1.1 stack"
+      ],
+      "references": [
+        "https://www.sstic.org/2025/presentation/",
+        "https://www.bluetooth.com/mesh-directed-forwarding/"
+      ]
     }
   ]
 }

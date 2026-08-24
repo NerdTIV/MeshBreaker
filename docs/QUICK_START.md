@@ -25,10 +25,10 @@ meshbreaker recon -t AA:BB:CC:DD:EE:FF
 meshbreaker enumerate -t AA:BB:CC:DD:EE:FF
 
 # Fuzz GATT characteristics
-meshbreaker fuzz --type gatt -t AA:BB:CC:DD:EE:FF
+meshbreaker fuzz -m gatt -t AA:BB:CC:DD:EE:FF
 
 # Fuzz L2CAP PSMs
-meshbreaker fuzz --type l2cap -t AA:BB:CC:DD:EE:FF
+meshbreaker fuzz -m l2cap -t AA:BB:CC:DD:EE:FF
 
 # Analyze a firmware binary
 meshbreaker firmware /path/to/firmware.bin

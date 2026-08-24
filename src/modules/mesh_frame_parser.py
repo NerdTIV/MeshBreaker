@@ -1,9 +1,8 @@
-import json
-from collections import defaultdict
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from src.utils import logger
+from src.utils.capture_io import (frame_bytes, load_capture,
+                                  profile_capture, warn_if_mesh_blind)
 
 
 @dataclass
@@ -40,13 +39,11 @@ class MeshFrameParser:
         self._topology = MeshTopology()
 
     def parse_file(self, path: str):
-        data = json.loads(Path(path).read_text())
-        # Accept either a bare list or {"beacons": [...]}
-        if isinstance(data, dict):
-            entries = data.get("beacons", data.get("devices", []))
-        else:
-            entries = data
+        entries = load_capture(path)
+        if entries is None:
+            return self._topology
         logger.info(f"Parsing {len(entries)} beacons from {path}")
+        warn_if_mesh_blind(profile_capture(entries), "mesh beacons")
         for entry in entries:
             self._process_entry(entry)
         self._infer_roles()
@@ -66,8 +63,7 @@ class MeshFrameParser:
         name     = entry.get("name", "")
         rssi     = entry.get("rssi", 0)
         mesh_hint = entry.get("mesh")
-        raw_hex  = entry.get("raw", "")
-        raw      = bytes.fromhex(raw_hex) if raw_hex else b""
+        raw      = frame_bytes(entry) or b""
 
         node = self._topology.nodes.get(mac)
         if node is None:

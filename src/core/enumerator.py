@@ -1,4 +1,3 @@
-import asyncio
 import socket
 import struct
 from typing import Any
@@ -91,7 +90,11 @@ class GATTEnumerator:
                         svc_info["characteristics"].append(char_info)
                     findings["services"].append(svc_info)
         except Exception as e:
-            logger.error(f"GATT enumeration failed: {e}")
+            from src.core.adapter_manager import report_ble_error
+            if not report_ble_error(e):
+                logger.error(f"GATT enumeration failed: {e}")
+                logger.info(f"  Check the target is in range and advertising: "
+                            f"meshbreaker recon -t {self.target}")
 
         self.results = findings
         return findings

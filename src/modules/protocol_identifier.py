@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from src.utils import logger
+from src.utils.capture_io import frame_bytes, load_capture
 
 _SIG_DB_PATH = Path(__file__).parent.parent.parent / "data" / "mesh_signatures.json"
 
@@ -28,12 +29,18 @@ class ProtocolIdentifier:
         return self._ranked(results)
 
     def from_capture_file(self, path: str):
-        data = json.loads(Path(path).read_text())
+        entries = load_capture(path)
+        if entries is None:
+            return []
+
         results: dict[str, ProtocolMatch] = {}
-        for beacon in data:
+        for beacon in entries:
+            raw = frame_bytes(beacon)
+            if raw is None:
+                continue
             dev = {
                 "uuids":            [],
-                "manufacturer_data": {beacon.get("ad_type"): bytes.fromhex(beacon.get("raw", ""))},
+                "manufacturer_data": {beacon.get("ad_type"): raw},
                 "name":              beacon.get("name", ""),
                 "service_data":      {},
             }
