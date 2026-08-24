@@ -17,10 +17,13 @@ scores the HCI adapters so we pick a sensible default, and reports which
 sniffer backends are actually installed.
 """
 
+import os
 import re
 import shutil
 import subprocess
 from dataclasses import dataclass, field
+from glob import glob
+from pathlib import Path
 
 from src.utils import logger
 
@@ -31,6 +34,7 @@ SNIFFER_USB_IDS = {
     "1915:521f": "nRF52840 Dongle (Nordic, DFU)",
     "2fe3:0100": "nRF52840 (Zephyr USB)",
     "2fe3:0001": "nRF52840 (Zephyr CDC ACM)",
+    "2fe3:0004": "nRF52840 (Zephyr CDC ACM serial backend)",
     "239a:8029": "nRF52840 Express (Adafruit)",
     "1d50:6002": "Ubertooth One",
     "0451:16a8": "TI CC2531 (Zigbee/BLE sniffer)",
@@ -64,6 +68,24 @@ class SnifferHardware:
     usb_id: str = ""
     description: str = ""
     tool_available: bool = False
+    port: str = ""              # /dev/ttyACM0 etc, when it exposes a serial link
+
+
+@dataclass
+class SerialDevice:
+    """A USB serial port, with whatever the device says about itself.
+
+    Sniffer firmware talks over one of these. Knowing the port exists is not
+    enough — you also need to know it is writable, because a port owned by
+    root with no dialout membership fails only once you try to drive it.
+    """
+
+    port: str = ""              # /dev/ttyACM0
+    usb_id: str = ""            # vid:pid, lowercase
+    manufacturer: str = ""
+    product: str = ""
+    serial: str = ""
+    writable: bool = False
 
 
 @dataclass
@@ -71,6 +93,7 @@ class HardwareReport:
     adapters: list[Adapter] = field(default_factory=list)
     sniffers: list[SnifferHardware] = field(default_factory=list)
     tools: dict[str, bool] = field(default_factory=dict)
+    serial_devices: list[SerialDevice] = field(default_factory=list)
     best_adapter: str = "hci0"
 
 
@@ -206,16 +229,117 @@ def get_best_adapter(default: str = "hci0") -> str:
     return best_of(list_adapters(), default)
 
 
-def detect_sniffer_hardware() -> list[SnifferHardware]:
-    """Look through lsusb for hardware that can do channel-level sniffing."""
-    out = _run(["lsusb"]).lower()
-    if not out:
-        return []
-    found: list[SnifferHardware] = []
-    for usb_id, description in SNIFFER_USB_IDS.items():
-        if usb_id in out:
-            found.append(SnifferHardware(usb_id=usb_id, description=description))
+# Vendors whose boards are worth reporting even on a product ID we do not
+# recognise — firmware flashes change the PID, the vendor stays put.
+SNIFFER_VENDOR_IDS = {
+    "1915": "Nordic Semiconductor",
+    "2fe3": "Zephyr / Nordic",
+    "1d50": "Great Scott Gadgets",
+    "239a": "Adafruit",
+}
+
+
+# Serial ports a sniffer board can show up on. ttyACM is the USB CDC class
+# (Nordic dongles, Zephyr firmware); ttyUSB is a UART bridge (CP210x, FTDI).
+SERIAL_PATTERNS = ("ttyACM*", "ttyUSB*")
+
+
+def _read_sysfs(path: Path) -> str:
+    try:
+        return path.read_text().strip()
+    except OSError:
+        return ""
+
+
+def _usb_parent(tty_name: str) -> Path | None:
+    """Walk up from /sys/class/tty/<name> to the USB device that owns it.
+
+    `device` points at the USB *interface*, not the device, and for a UART
+    bridge there are more levels in between — so climb until we find the
+    node that carries idVendor.
+    """
+    node = Path(f"/sys/class/tty/{tty_name}/device")
+    if not node.exists():
+        return None
+    try:
+        node = node.resolve()
+    except OSError:
+        return None
+    for _ in range(5):
+        if (node / "idVendor").exists():
+            return node
+        if node.parent == node:
+            break
+        node = node.parent
+    return None
+
+
+def detect_serial_devices() -> list[SerialDevice]:
+    """Enumerate USB serial ports and identify them from sysfs.
+
+    lsusb tells you a board is plugged in; this tells you which port to
+    point a sniffer tool at, which is the part you actually need to type.
+    """
+    found: list[SerialDevice] = []
+    for pattern in SERIAL_PATTERNS:
+        for port in sorted(glob(f"/dev/{pattern}")):
+            name = Path(port).name
+            dev = SerialDevice(port=port, writable=os.access(port, os.W_OK))
+            usb = _usb_parent(name)
+            if usb:
+                vid = _read_sysfs(usb / "idVendor").lower()
+                pid = _read_sysfs(usb / "idProduct").lower()
+                if vid and pid:
+                    dev.usb_id = f"{vid}:{pid}"
+                dev.manufacturer = _read_sysfs(usb / "manufacturer")
+                dev.product = _read_sysfs(usb / "product")
+                dev.serial = _read_sysfs(usb / "serial")
+            found.append(dev)
     return found
+
+
+def detect_sniffer_hardware(
+    serial_devices: list[SerialDevice] | None = None,
+) -> list[SnifferHardware]:
+    """Find hardware that can do channel-level sniffing.
+
+    Two sources, because neither alone is enough. lsusb sees boards that
+    expose no serial port (a dongle in DFU mode). Serial enumeration sees
+    boards whose VID:PID we do not have in the table — firmware changes the
+    product ID, so the list will always lag reality; a Nordic or Ubertooth
+    VID on a serial port is worth reporting even when the exact PID is new.
+    """
+    if serial_devices is None:
+        serial_devices = detect_serial_devices()
+
+    found: dict[str, SnifferHardware] = {}
+
+    out = _run(["lsusb"]).lower()
+    for usb_id, description in SNIFFER_USB_IDS.items():
+        if usb_id and usb_id in out:
+            found[usb_id] = SnifferHardware(usb_id=usb_id, description=description)
+
+    for dev in serial_devices:
+        known = SNIFFER_USB_IDS.get(dev.usb_id)
+        vendor = dev.usb_id.split(":")[0] if dev.usb_id else ""
+        if not known and vendor not in SNIFFER_VENDOR_IDS:
+            continue
+        description = known or _describe_unknown(dev, vendor)
+        entry = found.setdefault(
+            dev.usb_id or dev.port,
+            SnifferHardware(usb_id=dev.usb_id, description=description),
+        )
+        entry.port = entry.port or dev.port
+
+    return list(found.values())
+
+
+
+def _describe_unknown(dev: SerialDevice, vendor: str) -> str:
+    """Best-effort label for a board on a known vendor but unknown product."""
+    label = " ".join(x for x in (dev.manufacturer, dev.product) if x)
+    vendor_name = SNIFFER_VENDOR_IDS.get(vendor, "unknown vendor")
+    return f"{label or vendor_name} (unrecognised product ID)"
 
 
 def detect_tools() -> dict[str, bool]:
@@ -227,7 +351,8 @@ def scan_hardware() -> HardwareReport:
     """Full inventory — adapters, sniffer hardware, and installed tools."""
     report = HardwareReport()
     report.adapters = list_adapters()
-    report.sniffers = detect_sniffer_hardware()
+    report.serial_devices = detect_serial_devices()
+    report.sniffers = detect_sniffer_hardware(report.serial_devices)
     report.tools = detect_tools()
     report.best_adapter = best_of(report.adapters)
 
@@ -265,18 +390,33 @@ def print_report(report: HardwareReport):
 
     t = Table(title="Sniffer Hardware", box=box.ROUNDED, border_style="magenta")
     t.add_column("USB ID", style="dim", width=12)
-    t.add_column("Device", style="bold white", width=42)
+    t.add_column("Device", style="bold white", width=38)
+    t.add_column("Port", style="cyan", width=16)
     t.add_column("Driver tool", width=14)
     if report.sniffers:
-        for s in report.sniffers:
-            ok = "[green]ready[/]" if s.tool_available else "[yellow]missing[/]"
-            t.add_row(s.usb_id, s.description, ok)
+        for sniffer in report.sniffers:
+            ok = "[green]ready[/]" if sniffer.tool_available else "[yellow]missing[/]"
+            t.add_row(sniffer.usb_id, sniffer.description,
+                      sniffer.port or "—", ok)
         console.print(t)
     else:
         logger.info("No dedicated sniffer hardware detected")
         logger.info("  Channel-level sniffing and connection following need one of:")
         logger.info("    nRF52840 dongle + Sniffle firmware  (~20 EUR, best value)")
         logger.info("    Ubertooth One                       (~120 EUR)")
+
+    # A board can be plugged in and still be useless to us: no serial port
+    # (wrong firmware, or DFU mode), or a port we cannot write to.
+    for sniffer in report.sniffers:
+        if not sniffer.port:
+            logger.warning(
+                f"{sniffer.description} is on USB but exposes no serial port — "
+                "wrong firmware, or the board is in DFU/bootloader mode"
+            )
+    for dev in report.serial_devices:
+        if dev.usb_id in SNIFFER_USB_IDS and not dev.writable:
+            logger.warning(f"{dev.port} is not writable by this user")
+            logger.info("  sudo usermod -aG dialout $USER   (then log out and back in)")
 
     t = Table(title="Tools", box=box.SIMPLE, border_style="cyan")
     t.add_column("Tool", style="bold white", width=20)

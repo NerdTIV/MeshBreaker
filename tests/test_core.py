@@ -286,6 +286,63 @@ def test_best_of_falls_back_when_no_adapters():
     assert am.best_of([]) == "hci0"
 
 
+def test_serial_device_on_known_id_is_reported_as_sniffer(monkeypatch):
+    """A board we know by VID:PID, reported with the port you have to type."""
+    dongle = am.SerialDevice(port="/dev/ttyACM0", usb_id="2fe3:0004",
+                             manufacturer="Zephyr Project",
+                             product="CDC ACM serial backend", writable=True)
+    monkeypatch.setattr(am, "_run", lambda *a, **k: "")
+    found = am.detect_sniffer_hardware([dongle])
+    assert len(found) == 1
+    assert found[0].usb_id == "2fe3:0004"
+    assert found[0].port == "/dev/ttyACM0"
+
+
+def test_unknown_product_id_on_known_vendor_is_still_reported(monkeypatch):
+    """Flashing firmware changes the product ID, so the table always lags.
+
+    A Nordic VID on a serial port is worth surfacing even when we have never
+    seen that PID — otherwise the user is told they have no sniffer while
+    holding one.
+    """
+    dongle = am.SerialDevice(port="/dev/ttyACM0", usb_id="1915:ffff",
+                             manufacturer="Nordic", product="Custom",
+                             writable=True)
+    monkeypatch.setattr(am, "_run", lambda *a, **k: "")
+    found = am.detect_sniffer_hardware([dongle])
+    assert len(found) == 1
+    assert "unrecognised product ID" in found[0].description
+    assert found[0].port == "/dev/ttyACM0"
+
+
+def test_unrelated_serial_device_is_ignored(monkeypatch):
+    """A USB modem or an Arduino is not a sniffer."""
+    modem = am.SerialDevice(port="/dev/ttyUSB0", usb_id="1a86:7523",
+                            product="USB Serial", writable=True)
+    monkeypatch.setattr(am, "_run", lambda *a, **k: "")
+    assert am.detect_sniffer_hardware([modem]) == []
+
+
+def test_lsusb_and_serial_do_not_double_report(monkeypatch):
+    """Same board seen twice must collapse to one row, keeping the port."""
+    dongle = am.SerialDevice(port="/dev/ttyACM0", usb_id="1d50:6002",
+                             product="Ubertooth One", writable=True)
+    monkeypatch.setattr(am, "_run",
+                        lambda *a, **k: "Bus 002 Device 005: ID 1d50:6002 ubertooth")
+    found = am.detect_sniffer_hardware([dongle])
+    assert len(found) == 1
+    assert found[0].port == "/dev/ttyACM0"
+
+
+def test_board_with_no_serial_port_still_reported(monkeypatch):
+    """A dongle in DFU mode exposes no port — lsusb is the only witness."""
+    monkeypatch.setattr(am, "_run",
+                        lambda *a, **k: "Bus 002 Device 005: ID 1915:521f nordic")
+    found = am.detect_sniffer_hardware([])
+    assert len(found) == 1
+    assert found[0].port == ""
+
+
 # ── Orchestrator ─────────────────────────────────────────────────────────────
 
 from src.core.orchestrator import Orchestrator
