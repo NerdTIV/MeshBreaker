@@ -468,7 +468,7 @@ meshbreaker set-target AA:BB:CC:DD:EE:FF
 │ Thread / OpenThread   ██░░░░░░░░░░░░░░░░░░ 10%      name match 'ot'           │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 
-14:22:18 [TGT] Target: AA:BB:CC:DD:EE:FF  RSSI -61 dBm  (SolidSense-n6gsdl)
+14:22:18 [TGT] Target: AA:BB:CC:DD:EE:FF  RSSI -61 dBm  (MeshGateway-A1B2)
 ```
 
 ---
