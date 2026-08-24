@@ -358,7 +358,7 @@ def print_report(report: HardwareReport):
     from rich import box
     from rich.console import Console
 
-    console = Console()
+    console = Console(emoji=False)
 
     t = Table(title="HCI Adapters", box=box.ROUNDED, border_style="cyan")
     t.add_column("Name", style="bold white", width=8)

@@ -313,7 +313,7 @@ def print_key_material(net_key: bytes):
     from rich.console import Console
 
     nid, encryption_key, privacy_key = k2(net_key)
-    console = Console()
+    console = Console(emoji=False)
 
     t = Table(title="Network Key Material", box=box.ROUNDED, border_style="magenta")
     t.add_column("Field", style="bold white", width=16)

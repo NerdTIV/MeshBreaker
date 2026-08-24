@@ -322,7 +322,7 @@ def print_audit(audit: DFAudit):
     from rich import box
     from rich.console import Console
 
-    console = Console()
+    console = Console(emoji=False)
 
     t = Table(title="Directed Forwarding Audit", box=box.ROUNDED, border_style="cyan")
     t.add_column("Field", style="bold white", width=22)

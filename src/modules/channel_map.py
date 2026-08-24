@@ -270,7 +270,7 @@ def print_channel_table():
     from rich import box
     from rich.console import Console
 
-    console = Console()
+    console = Console(emoji=False)
     t = Table(title="BLE Channel Map — 40 channels x 2 MHz = 80 MHz",
               box=box.ROUNDED, border_style="cyan")
     t.add_column("Ch", style="bold white", width=4)
@@ -293,7 +293,7 @@ def print_connection_params(params: ConnectionParams, hops: list[int] | None = N
     from rich import box
     from rich.console import Console
 
-    console = Console()
+    console = Console(emoji=False)
     used = params.used_channels
 
     t = Table(title="Connection Parameters (from CONNECT_IND)",

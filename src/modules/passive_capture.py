@@ -146,7 +146,7 @@ def _print_summary(session: CaptureSession):
     from rich.console import Console
     from collections import Counter
 
-    console = Console()
+    console = Console(emoji=False)
     mesh_counts = Counter(b.mesh_hint for b in session.beacons if b.mesh_hint)
     total = len(session.beacons)
 

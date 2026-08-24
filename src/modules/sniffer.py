@@ -295,7 +295,7 @@ def _print_sniff_summary(result: SniffResult, seen_per_adapter: dict):
     from rich.console import Console
     from collections import defaultdict
 
-    console = Console()
+    console = Console(emoji=False)
 
     t = Table(title="Multi-Adapter Sniff", box=box.ROUNDED, border_style="cyan")
     t.add_column("Metric", style="bold white", width=22)
@@ -336,7 +336,7 @@ def print_channel_plan(adapters: list[str]):
     from rich import box
     from rich.console import Console
 
-    console = Console()
+    console = Console(emoji=False)
     t = Table(title="Advertising Channel Coverage", box=box.ROUNDED, border_style="magenta")
     t.add_column("Channel", style="bold magenta", width=8)
     t.add_column("Freq", style="cyan", width=10)

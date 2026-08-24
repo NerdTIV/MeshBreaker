@@ -115,7 +115,7 @@ def _print_topology(topo: MeshTopology):
     from rich.table import Table
     from rich import box
     from rich.console import Console
-    console = Console()
+    console = Console(emoji=False)
 
     t = Table(title=f"Mesh Topology ({topo.protocol or 'unknown protocol'})",
               box=box.ROUNDED, border_style="magenta")

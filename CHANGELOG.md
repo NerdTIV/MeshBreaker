@@ -88,6 +88,25 @@
   integrity, corrupt capture handling and BLE error explanation.
 
 ### Fixed
+- `hci-capture` returned an empty capture on any Bluetooth 5 controller.
+  BlueZ switches to extended scanning by itself when the controller supports
+  it, and reports then arrive as LE Extended Advertising Report (subevent
+  0x0D) instead of the legacy 0x02. Only 0x02 was decoded, so everything else
+  was dropped without a word — the user saw "No advertising reports captured"
+  and read it as "nothing is advertising". On an Intel AX200 the same 25
+  seconds went from 0 to 2464 AD structures.
+- `provisioning --capture` invented provisioning sessions out of unrelated
+  adverts. Frames that were not PB-ADV still reached the parser, and
+  `parse_pb_adv()` succeeds on any buffer of 6 bytes or more because it reads
+  the first four as a Link ID — so an Apple beacon was reported as a
+  provisioning session with link ID 0xFF4C0002. In an audit tool a false
+  "provisioning traffic observed" is worse than silence. Frames are now
+  filtered on the authoritative `ad_type` field, falling back to the payload
+  only for captures that carry no type.
+- MAC addresses were mangled on screen: Rich renders `:cd:` as a CD emoji, so
+  `64:01:60:CD:9A:1C` printed as `64:01:60(disc)9A:1C` and the address shown
+  was not the address on the air. Every Console is now built with
+  `emoji=False`, and a test enforces it.
 - `recon` crashed with `AttributeError: 'int' object has no attribute 'replace'`
   as soon as a scan actually found a device. The `enumerate` CLI command is a
   module-level `def enumerate(...)`, which shadows the builtin for the whole

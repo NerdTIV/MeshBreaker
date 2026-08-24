@@ -329,6 +329,93 @@ def test_board_with_no_serial_port_still_reported(monkeypatch):
     assert found[0].port == ""
 
 
+def test_non_pb_adv_frames_are_not_read_as_provisioning():
+    """parse_pb_adv() succeeds on any 6+ byte buffer, so filtering matters.
+
+    An Apple manufacturer-data advert was reported as a provisioning session
+    with link ID 0xFF4C0002 — the company ID read as a Link ID. In an audit
+    tool a false "provisioning traffic observed" is worse than silence.
+    """
+    from src.modules.provisioning import _pb_adv_payload
+
+    apple = bytes.fromhex("ff4c000212020003")
+    assert _pb_adv_payload({"ad_type": 0xFF}, apple) is None
+    assert _pb_adv_payload({}, apple) is None
+
+    pb_adv = bytes([0x29]) + bytes.fromhex("11223344") + b"\x00\x03\x00"
+    assert _pb_adv_payload({"ad_type": 0x29}, pb_adv) == pb_adv[1:]
+    assert _pb_adv_payload({}, pb_adv) == pb_adv[1:]
+
+    assert _pb_adv_payload({"ad_type": 0x29}, bytes([0x29, 0x01])) is None
+
+
+def test_extended_advertising_reports_are_decoded():
+    """A Bluetooth 5 controller reports through subevent 0x0D, not 0x02.
+
+    BlueZ switches to extended scanning on its own when the controller
+    supports it, and an Intel AX200 does. Decoding only the legacy event
+    yielded an empty capture there, which reads as "nothing is advertising".
+    """
+    from src.modules.hci_capture import (parse_le_ext_advertising_report,
+                                         _parse_monitor_packet)
+
+    payload = bytes.fromhex("020106")
+    event_type = bytes.fromhex("0100")
+    address_type = b"\x01"
+    address = bytes.fromhex("112233445566")
+    phys_sid_txpower = b"\x01\x01\x00\x7f"
+    rssi_minus_64 = bytes([0xC0])
+    periodic_interval = b"\x00\x00"
+    direct_address = b"\x00" + bytes(6)
+
+    report = (event_type + address_type + address + phys_sid_txpower
+              + rssi_minus_64 + periodic_interval + direct_address
+              + bytes([len(payload)]) + payload)
+    body = b"\x3e" + bytes([len(report) + 2]) + b"\x0d\x01" + report
+    from src.modules import hci_capture as hci
+    packet = struct.pack("<HHH", hci.MON_EVENT_PKT, 0, len(body)) + body
+
+    parsed = parse_le_ext_advertising_report(b"\x01" + report)
+    assert len(parsed) == 1
+    assert parsed[0]["mac"] == "66:55:44:33:22:11"
+    assert parsed[0]["rssi"] == -64
+    assert parsed[0]["payload"] == payload
+
+    assert _parse_monitor_packet(packet) == parsed
+
+
+def test_mac_addresses_survive_rich_rendering():
+    """Rich turns :cd: into a CD emoji, which eats a byte of a MAC address.
+
+    64:01:60:CD:9A:1C rendered as 64:01:60(disc)9A:1C, so the address on
+    screen was not the address on the air. Any byte matching an emoji name
+    hits this.
+    """
+    from src.utils import logger
+
+    with logger.console.capture() as cap:
+        logger.info("64:01:60:CD:9A:1C")
+    out = cap.get()
+    assert "64:01:60:CD:9A:1C" in out
+    assert "\U0001F4BF" not in out
+
+
+def test_no_console_renders_emoji_shortcodes():
+    """Every Console must be built with emoji=False, not just the logger's."""
+    import re
+    from pathlib import Path
+
+    offenders = []
+    root = Path(__file__).resolve().parent.parent
+    for f in sorted(root.rglob("*.py")):
+        if "__pycache__" in str(f):
+            continue
+        for i, line in enumerate(f.read_text().splitlines(), 1):
+            if re.search(r"\bConsole\(", line) and "emoji=False" not in line:
+                offenders.append(f"{f.relative_to(root)}:{i}")
+    assert not offenders, f"Console without emoji=False: {offenders}"
+
+
 def test_cli_commands_do_not_shadow_builtins():
     """A click command named like a builtin shadows it for the whole module.
 

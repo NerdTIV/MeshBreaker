@@ -160,6 +160,56 @@ def parse_le_advertising_report(data: bytes) -> list[dict]:
     return reports
 
 
+def parse_le_ext_advertising_report(data: bytes) -> list[dict]:
+    """Parse an LE Extended Advertising Report event body.
+
+    A Bluetooth 5 controller reports through this instead of the legacy
+    event, and BlueZ switches to extended scanning on its own when the
+    controller supports it. An Intel AX200 does; a legacy-only parser sees
+    nothing at all on one and reports an empty capture, which reads as
+    "nothing is advertising" rather than "this event was not decoded".
+
+    Layout after the subevent code:
+        num_reports (1)
+        then per report, sequential (not the parallel arrays of the
+        legacy event):
+            event_type (2) address_type (1) address (6)
+            primary_phy (1) secondary_phy (1) sid (1) tx_power (1)
+            rssi (1, signed) periodic_interval (2)
+            direct_address_type (1) direct_address (6)
+            data_length (1) data (data_length)
+    """
+    reports: list[dict] = []
+    if not data:
+        return reports
+
+    num_reports = data[0]
+    offset = 1
+    for _ in range(num_reports):
+        if offset + 24 > len(data):
+            break
+        event_type = struct.unpack("<H", data[offset:offset + 2])[0]
+        address_type = data[offset + 2]
+        address = data[offset + 3:offset + 9]
+        rssi = struct.unpack("b", data[offset + 13:offset + 14])[0]
+        data_length = data[offset + 23]
+        offset += 24
+
+        if offset + data_length > len(data):
+            break
+        payload = data[offset:offset + data_length]
+        offset += data_length
+
+        reports.append({
+            "event_type": event_type,
+            "address_type": address_type,
+            "mac": ":".join(f"{b:02X}" for b in reversed(address)),
+            "payload": payload,
+            "rssi": rssi,
+        })
+    return reports
+
+
 def _parse_monitor_packet(packet: bytes) -> list[dict]:
     """Pull LE advertising reports out of one monitor-socket packet.
 
@@ -182,10 +232,11 @@ def _parse_monitor_packet(packet: bytes) -> list[dict]:
     if len(body) < 3:
         return []
     subevent = body[2]
-    if subevent != LE_ADVERTISING_REPORT:
-        return []
-
-    return parse_le_advertising_report(body[3:])
+    if subevent == LE_ADVERTISING_REPORT:
+        return parse_le_advertising_report(body[3:])
+    if subevent == LE_EXT_ADVERTISING_REPORT:
+        return parse_le_ext_advertising_report(body[3:])
+    return []
 
 
 class HCIMonitorCapture:
@@ -388,7 +439,7 @@ def _print_summary(session: HCICaptureSession):
     from rich import box
     from rich.console import Console
 
-    console = Console()
+    console = Console(emoji=False)
 
     if not session.frames:
         logger.warning("No advertising reports captured")

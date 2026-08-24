@@ -391,7 +391,7 @@ def _print_chain_summary(results: list[PhaseResult]):
     from rich import box
     from rich.console import Console
 
-    console = Console()
+    console = Console(emoji=False)
     colors = {"ok": "green", "failed": "red", "skipped": "dim", "pending": "dim"}
 
     t = Table(title="Chain Summary", box=box.ROUNDED, border_style="cyan")

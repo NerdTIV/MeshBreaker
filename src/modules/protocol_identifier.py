@@ -155,7 +155,7 @@ def _print_matches(matches: list[ProtocolMatch]):
     from rich.table import Table
     from rich import box
     from rich.console import Console
-    console = Console()
+    console = Console(emoji=False)
 
     if not matches:
         logger.warning("No protocol identified")

@@ -183,6 +183,31 @@ def parse_start(data: bytes) -> dict | None:
     }
 
 
+def _pb_adv_payload(entry: dict, raw: bytes) -> bytes | None:
+    """Return the PB-ADV payload of a frame, or None if it is not PB-ADV.
+
+    Everything that is not PB-ADV has to be dropped here. Feeding an
+    arbitrary advert to parse_pb_adv() always succeeds — it reads the first
+    four bytes as a Link ID — so an Apple manufacturer-data frame gets
+    reported as a provisioning session with link ID 0xFF4C0002. A false
+    "provisioning traffic observed" is worse than silence in an audit tool.
+
+    `ad_type` is authoritative when the capture carries it. Only a capture
+    without it falls back to reading the type off the payload.
+    """
+    ad_type = entry.get("ad_type")
+    if ad_type is not None:
+        if ad_type != PB_ADV_AD_TYPE:
+            return None
+        payload = raw[1:] if raw[:1] == bytes([PB_ADV_AD_TYPE]) else raw
+    else:
+        if raw[:1] != bytes([PB_ADV_AD_TYPE]):
+            return None
+        payload = raw[1:]
+
+    return payload if len(payload) >= 6 else None
+
+
 def parse_pb_adv(raw: bytes) -> dict | None:
     """Parse one PB-ADV payload.
 
@@ -261,11 +286,10 @@ class ProvisioningAnalyzer:
         frames, _ = decode_frames(entries)
 
         for entry, raw in frames:
-            if raw[0] == PB_ADV_AD_TYPE:
-                raw = raw[1:]
-            elif len(raw) < 6:
+            payload = _pb_adv_payload(entry, raw)
+            if payload is None:
                 continue
-            self._process(raw, entry.get("mac", ""))
+            self._process(payload, entry.get("mac", ""))
 
         if not self.sessions and not self.mesh_blind:
             logger.info("No PB-ADV provisioning traffic in this capture")
@@ -436,7 +460,7 @@ def print_sessions(sessions: list[ProvisioningSession], findings: list[Provision
     from rich import box
     from rich.console import Console
 
-    console = Console()
+    console = Console(emoji=False)
 
     if sessions:
         t = Table(title="Provisioning Sessions Observed", box=box.ROUNDED,
@@ -648,7 +672,7 @@ def print_service_data(unprovisioned: list, proxies: list):
     from rich import box
     from rich.console import Console
 
-    console = Console()
+    console = Console(emoji=False)
 
     if unprovisioned:
         t = Table(title="Unprovisioned Nodes (Mesh Provisioning Service 0x1827)",

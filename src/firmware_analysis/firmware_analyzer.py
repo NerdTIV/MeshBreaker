@@ -325,7 +325,7 @@ class FirmwareAnalyzer:
         from rich.table import Table
         from rich import box
         from rich.console import Console
-        console = Console()
+        console = Console(emoji=False)
 
         t = Table(title=f"Firmware Report — {self.path.name}",
                   box=box.ROUNDED, border_style="magenta")

@@ -223,7 +223,7 @@ def print_profile(profile: CaptureProfile):
     from rich import box
     from rich.console import Console
 
-    console = Console()
+    console = Console(emoji=False)
     t = Table(title=f"Capture Contents — {profile.total} frames, source: {profile.source}",
               box=box.ROUNDED, border_style="cyan")
     t.add_column("AD type", style="bold white", width=9)

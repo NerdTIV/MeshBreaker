@@ -76,3 +76,4 @@ config/local_*.json
 *.backup
 *.part_aa
 docs/_build/
+output/reports/

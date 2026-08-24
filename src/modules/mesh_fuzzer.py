@@ -152,7 +152,7 @@ def _print_fuzz_results(results: list[MeshFuzzResult]):
     from rich.table import Table
     from rich import box
     from rich.console import Console
-    console = Console()
+    console = Console(emoji=False)
 
     crashes = [r for r in results if r.crashed]
     t = Table(title=f"Mesh Fuzz Results — {len(results)} payloads, {len(crashes)} crashes",

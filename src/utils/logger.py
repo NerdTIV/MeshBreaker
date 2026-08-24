@@ -12,7 +12,7 @@ _theme = Theme({
     "data":    "bright_white",
 })
 
-console = Console(theme=_theme)
+console = Console(theme=_theme, emoji=False)
 
 def _ts() -> str:
     return datetime.now().strftime("%H:%M:%S")

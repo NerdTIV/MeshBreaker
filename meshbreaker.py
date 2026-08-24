@@ -34,7 +34,7 @@ from src.modules import sniffer as sniffer_mod
 from src.firmware_analysis.firmware_analyzer import FirmwareAnalyzer
 from src.utils import logger
 
-console = Console()
+console = Console(emoji=False)
 
 BANNER = """\
 ███╗   ███╗███████╗███████╗██╗  ██╗██████╗ ██████╗ ███████╗ █████╗ ██╗  ██╗███████╗██████╗
