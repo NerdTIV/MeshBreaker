@@ -246,6 +246,7 @@ class HCIMonitorCapture:
         self.adapter = adapter
         self.output_dir = Path(output_dir)
         self.session = HCICaptureSession()
+        self.scan_failed = False
 
     @staticmethod
     def available() -> tuple[bool, str]:
@@ -332,6 +333,15 @@ class HCIMonitorCapture:
         scanner_task = None
         if drive_scan:
             scanner_task = asyncio.create_task(self._drive_scan(duration))
+            await asyncio.sleep(1.5)
+            if self.scan_failed:
+                sock.close()
+                scanner_task.cancel()
+                logger.error("Nothing is scanning, so the monitor would record "
+                             "an empty capture")
+                logger.info("  Fix the error above and run this again, or drive "
+                            "a scan yourself and pass --no-scan")
+                return self.session
 
         start = time.time()
         try:
@@ -395,9 +405,10 @@ class HCIMonitorCapture:
         except asyncio.CancelledError:
             raise
         except Exception as e:
+            self.scan_failed = True
             from src.core.adapter_manager import report_ble_error
             if not report_ble_error(e):
-                logger.warning(f"Could not start scanning: {e}")
+                logger.warning(f"Could not start scanning: {logger.describe(e)}")
             logger.info("  Start one yourself with: bluetoothctl scan on")
 
     def _record(self, report: dict, timestamp: float):

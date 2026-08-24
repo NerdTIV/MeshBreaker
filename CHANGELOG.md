@@ -135,6 +135,12 @@
   integrity, corrupt capture handling and BLE error explanation.
 
 ### Fixed
+- A capture whose scan could not start ran to completion recording nothing.
+  The monitor socket is passive — it shows what the adapter already receives
+  — so with no scan in progress it captures silence. The failure was only a
+  warning, so `hci-capture -d 2700` spent forty-five minutes listening to an
+  adapter nobody had put into scanning mode. It now stops within seconds and
+  says why, unless `--no-scan` says you are driving the scan yourself.
 - The GATT fuzzer kept writing into a dead connection. A target that tears
   the link down on the first unauthorised write — which is what iOS does —
   left every later payload failing with BlueZ's "Service Discovery has not

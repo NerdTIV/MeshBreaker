@@ -711,6 +711,45 @@ def test_short_capture_is_flagged_as_unable_to_show_rotation():
     assert report.rotating_addresses == ["72:11:11:11:11:11"]
 
 
+def test_capture_aborts_when_no_scan_can_run(monkeypatch):
+    """The monitor is passive: with nothing scanning it records silence.
+
+    A 45-minute run once spent its whole duration listening to an adapter
+    nobody had put into scanning mode, because a failed scan only produced a
+    warning and the capture carried on regardless.
+    """
+    import asyncio
+    from src.modules import hci_capture as hci
+
+    class FakeSocket:
+        closed = False
+
+        def close(self):
+            self.closed = True
+
+    sock = FakeSocket()
+    cap = hci.HCIMonitorCapture(output_dir="/tmp")
+    monkeypatch.setattr(hci.HCIMonitorCapture, "available",
+                        staticmethod(lambda: (True, "")))
+    monkeypatch.setattr(cap, "_open_monitor", lambda: sock)
+
+    async def failing_scan(duration):
+        cap.scan_failed = True
+        await asyncio.sleep(duration)
+
+    monkeypatch.setattr(cap, "_drive_scan", failing_scan)
+
+    async def must_not_run(*a, **kw):
+        raise AssertionError("read_loop ran despite no scanner")
+
+    monkeypatch.setattr(cap, "read_loop", must_not_run)
+
+    session = asyncio.run(cap.capture(duration=2700, save=False))
+
+    assert session.frames == []
+    assert sock.closed
+
+
 def test_cli_commands_do_not_shadow_builtins():
     """A click command named like a builtin shadows it for the whole module.
 
