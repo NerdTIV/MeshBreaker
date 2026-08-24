@@ -94,6 +94,16 @@
   integrity, corrupt capture handling and BLE error explanation.
 
 ### Fixed
+- Errors carrying no message printed as nothing: bleak raises
+  `TimeoutError('')` on a failed connection, so `enumerate` reported
+  "GATT enumeration failed: " and left you guessing. `logger.describe()`
+  falls back to the exception type, and the nine BLE and subprocess error
+  paths use it.
+- A GATT timeout suggested checking the target was advertising, which is
+  wrong half the time. A link that comes up and then stalls in service
+  discovery times out identically — that is what a device with no usable ATT
+  server looks like. Both cases are now named, with `btmon` to tell them
+  apart.
 - Every report said `Devices found: 0`. `recon` filled `session.devices`, but
   the session saver never wrote the field, so the next command reloaded an
   empty list. Devices now survive the round trip.

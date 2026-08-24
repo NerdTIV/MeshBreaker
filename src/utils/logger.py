@@ -14,6 +14,15 @@ _theme = Theme({
 
 console = Console(theme=_theme, emoji=False)
 
+def describe(exc: BaseException) -> str:
+    """Render an exception, falling back to its type when it carries no text.
+
+    bleak raises TimeoutError('') on a failed connection, so a plain
+    f"failed: {e}" prints "failed: " and tells the reader nothing.
+    """
+    return str(exc) or type(exc).__name__
+
+
 def _ts() -> str:
     return datetime.now().strftime("%H:%M:%S")
 

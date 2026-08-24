@@ -1,3 +1,4 @@
+import asyncio
 import socket
 import struct
 from typing import Any
@@ -92,9 +93,17 @@ class GATTEnumerator:
         except Exception as e:
             from src.core.adapter_manager import report_ble_error
             if not report_ble_error(e):
-                logger.error(f"GATT enumeration failed: {e}")
-                logger.info(f"  Check the target is in range and advertising: "
-                            f"meshbreaker recon -t {self.target}")
+                logger.error(f"GATT enumeration failed: {logger.describe(e)}")
+                if isinstance(e, (asyncio.TimeoutError, TimeoutError)):
+                    logger.info("  A timeout here covers two very different cases:")
+                    logger.info("    the target never answered — check it is advertising:")
+                    logger.info(f"      meshbreaker recon -t {self.target}")
+                    logger.info("    or the link came up and service discovery stalled,")
+                    logger.info("    which is what a device with no usable ATT server does.")
+                    logger.info("    Confirm which with:  sudo btmon")
+                else:
+                    logger.info(f"  Check the target is in range and advertising: "
+                                f"meshbreaker recon -t {self.target}")
 
         self.results = findings
         return findings

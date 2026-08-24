@@ -102,7 +102,7 @@ class GATTFuzzer:
                                 client, char.handle, str(char.uuid))
                             self.results.extend(res)
         except Exception as e:
-            logger.error(f"Fuzzer connection failed: {e}")
+            logger.error(f"Fuzzer connection failed: {logger.describe(e)}")
 
         total   = len(self.results)
         crashes = len(self.crashes)

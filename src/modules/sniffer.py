@@ -116,7 +116,7 @@ class MultiAdapterSniffer:
                 async with scanner:
                     await asyncio.sleep(duration)
             except Exception as e:
-                logger.error(f"Adapter {adapter_name} failed: {e}")
+                logger.error(f"Adapter {adapter_name} failed: {logger.describe(e)}")
 
         await asyncio.gather(*[_scan_on(a) for a in self.adapters])
         self.result.duration = time.time() - start
@@ -199,7 +199,7 @@ class SniffleBackend:
         except subprocess.TimeoutExpired:
             pass
         except Exception as e:
-            logger.error(f"Sniffle failed: {e}")
+            logger.error(f"Sniffle failed: {logger.describe(e)}")
             return {"error": str(e)}
 
         logger.success(f"Capture → {pcap}")
@@ -245,7 +245,7 @@ class UbertoothBackend:
         except subprocess.TimeoutExpired:
             pass
         except Exception as e:
-            logger.error(f"Ubertooth failed: {e}")
+            logger.error(f"Ubertooth failed: {logger.describe(e)}")
             return {"error": str(e)}
 
         logger.success(f"Capture → {pcap}")

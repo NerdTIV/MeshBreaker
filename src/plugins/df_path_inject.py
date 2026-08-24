@@ -237,7 +237,7 @@ class DFPathInjectPlugin(PluginBase):
                 src=src, dst=dst, ctl=1, ttl=ttl, seq=seq,
             )
         except (ValueError, RuntimeError) as e:
-            logger.error(f"Could not build the network PDU: {e}")
+            logger.error(f"Could not build the network PDU: {logger.describe(e)}")
             return {"error": str(e)}
 
         opcode_name = DF_CONTROL_OPCODES.get(opcode, f"0x{opcode:02X}")
@@ -324,7 +324,7 @@ class DFPathInjectPlugin(PluginBase):
                 try:
                     await client.start_notify(PROXY_OUT, _on_notify)
                 except Exception as e:
-                    logger.warning(f"Could not subscribe to Proxy Out: {e}")
+                    logger.warning(f"Could not subscribe to Proxy Out: {logger.describe(e)}")
 
                 for i, chunk in enumerate(proxy_pdus):
                     await client.write_gatt_char(PROXY_IN, chunk, response=False)
@@ -339,7 +339,7 @@ class DFPathInjectPlugin(PluginBase):
         except Exception as e:
             from src.core.adapter_manager import report_ble_error
             if not report_ble_error(e):
-                logger.error(f"Injection failed: {e}")
+                logger.error(f"Injection failed: {logger.describe(e)}")
             return {"error": str(e), "att_mtu": att_mtu, "transmitted": False}
 
         if responses:

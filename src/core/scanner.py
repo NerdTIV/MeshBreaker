@@ -85,5 +85,5 @@ class ClassicScanner:
         except subprocess.TimeoutExpired:
             pass
         except subprocess.CalledProcessError as e:
-            logger.error(f"hcitool error: {e}")
+            logger.error(f"hcitool error: {logger.describe(e)}")
         return devices
