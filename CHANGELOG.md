@@ -3,6 +3,23 @@
 ## [Unreleased]
 
 ### Added
+- `privacy` command and `src/modules/privacy_audit.py` — audits address
+  rotation and linkability. BLE privacy rests on a random address that
+  changes every fifteen minutes or so, which only helps if the advertisement
+  content changes with it: anything identical on both sides of a rotation
+  ties the old address to the new one and the device stays trackable. The
+  module classifies each address (public, static random, resolvable private,
+  non-resolvable) and reports every payload broadcast under more than one
+  address, naming the field that carried the link. Findings are graded:
+  evidence shorter than 8 bytes, spread over more than four addresses, or of
+  low byte entropy is marked weak, because a value every device of a model
+  sends is not a fingerprint. Flags and TX power are never used as evidence —
+  every device sends the same ones. A capture shorter than the spec rotation
+  period says so, since finding no rotation in 25 seconds means the capture
+  was short, not that the device stands still.
+- `hci-capture` now records the address type reported by the controller,
+  which the parser already decoded and then dropped. Without it, public and
+  non-resolvable addresses cannot be told apart.
 - `continuity` command and `src/modules/apple_continuity.py` — decodes Apple
   Continuity messages out of manufacturer data under company ID 0x004C.
   Handoff, Find My, AirDrop, Nearby Info, Proximity Pairing and the rest ride

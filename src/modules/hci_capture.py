@@ -417,6 +417,7 @@ class HCIMonitorCapture:
                 "mac": report["mac"],
                 "name": name,
                 "rssi": report["rssi"],
+                "addr_type": report.get("address_type"),
                 "ad_type": structure.ad_type,
                 "raw": bytes([structure.ad_type]).hex() + structure.data.hex(),
                 "mesh": "sig_mesh" if structure.is_mesh else None,

@@ -636,6 +636,81 @@ def test_continuity_ignores_non_apple_frames():
     assert report.total_messages == 1
 
 
+def test_address_kind_reads_the_top_two_bits():
+    from src.modules import privacy_audit as pa
+
+    assert pa.address_kind("C6:60:94:89:46:70") == pa.ADDR_STATIC
+    assert pa.address_kind("72:12:E9:5E:DD:88") == pa.ADDR_RESOLVABLE
+    assert pa.address_kind("10:38:1F:E5:48:2F", addr_type=1) == pa.ADDR_NON_RESOLVABLE
+    assert pa.address_kind("10:38:1F:E5:48:2F", addr_type=0) == pa.ADDR_PUBLIC
+    assert pa.address_kind("not-a-mac") == pa.ADDR_UNKNOWN
+
+
+def test_payload_under_two_addresses_is_reported_as_linkable():
+    """Identical bytes on both sides of a rotation defeat the rotation."""
+    from src.modules.privacy_audit import analyse
+
+    shared = "ff4c000c0e0812345678deadbeefcafe"
+    entries = [
+        {"mac": "72:11:11:11:11:11", "t": 0.0, "ad_type": 0xFF, "raw": shared},
+        {"mac": "72:22:22:22:22:22", "t": 60.0, "ad_type": 0xFF, "raw": shared},
+    ]
+    report = analyse(entries)
+
+    assert len(report.groups) == 1
+    group = report.groups[0]
+    assert group.addresses == ["72:11:11:11:11:11", "72:22:22:22:22:22"]
+    assert group.strength == "strong"
+    assert group.label == "manufacturer data"
+
+
+def test_flags_and_tx_power_never_count_as_evidence():
+    """Every device sends 0106. Linking on it would flag the whole room."""
+    from src.modules.privacy_audit import analyse
+
+    entries = [
+        {"mac": f"72:00:00:00:00:{i:02x}", "t": float(i),
+         "ad_type": 0x01, "raw": "010600000000"} for i in range(5)
+    ] + [
+        {"mac": f"72:00:00:00:00:{i:02x}", "t": float(i),
+         "ad_type": 0x0A, "raw": "0a0c00000000"} for i in range(5)
+    ]
+    assert analyse(entries).groups == []
+
+
+def test_short_or_crowded_evidence_is_graded_weak():
+    from src.modules.privacy_audit import analyse
+
+    short = [
+        {"mac": "72:11:11:11:11:11", "t": 0.0, "ad_type": 0xFF, "raw": "ff4c001202"},
+        {"mac": "72:22:22:22:22:22", "t": 5.0, "ad_type": 0xFF, "raw": "ff4c001202"},
+    ]
+    groups = analyse(short).groups
+    assert len(groups) == 1
+    assert groups[0].strength == "weak"
+    assert "bytes" in groups[0].why_weak
+
+    crowd_payload = "ff4c000c0e0812345678deadbeefcafe"
+    crowd = [{"mac": f"72:00:00:00:00:{i:02x}", "t": float(i),
+              "ad_type": 0xFF, "raw": crowd_payload} for i in range(6)]
+    groups = analyse(crowd).groups
+    assert groups[0].strength == "weak"
+    assert "addresses" in groups[0].why_weak
+
+
+def test_short_capture_is_flagged_as_unable_to_show_rotation():
+    """A 25s capture cannot prove a 15-minute rotation did not happen."""
+    from src.modules.privacy_audit import analyse
+
+    entries = [{"mac": "72:11:11:11:11:11", "t": t, "ad_type": 0xFF,
+                "raw": "ff4c0010063f1e565b5e43"} for t in (0.0, 25.0)]
+    report = analyse(entries)
+
+    assert report.duration == 25.0
+    assert report.too_short
+    assert report.rotating_addresses == ["72:11:11:11:11:11"]
+
+
 def test_cli_commands_do_not_shadow_builtins():
     """A click command named like a builtin shadows it for the whole module.
 

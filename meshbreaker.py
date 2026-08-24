@@ -908,6 +908,77 @@ def hci_capture(ctx, duration, no_scan):
 
 @cli.command()
 @click.option("--capture", "capture_file", default=None, type=click.Path(exists=True),
+              help="Capture JSON to analyse (default: the last one in the session)")
+@click.option("--duration", "-d", default=None, type=float, metavar="SECONDS",
+              help="Capture live first (Linux, root) instead of reading a file")
+@click.pass_context
+def privacy(ctx, capture_file, duration):
+    """Audit address rotation and linkability.
+
+    \b
+    A device is supposed to hide behind a random address that changes every
+    fifteen minutes or so. That only helps if the advertisement content
+    changes with it: anything identical on both sides of a rotation ties the
+    old address to the new one and the device stays trackable.
+
+    \b
+    This looks for payloads broadcast under more than one address, and says
+    which field carried the link. A shared payload is evidence, not proof —
+    two devices of the same model can legitimately send the same bytes.
+
+    \b
+    Examples:
+      sudo meshbreaker privacy -d 1800
+      meshbreaker privacy --capture output/hci_capture_123.json
+    """
+    _banner()
+    output  = ctx.obj["output"]
+    adapter = ctx.obj["adapter"]
+    session = _load_session(output)
+
+    from src.modules import privacy_audit
+    from src.utils.capture_io import load_capture
+
+    if duration:
+        from src.modules.hci_capture import HCIMonitorCapture
+        ok, why = HCIMonitorCapture.available()
+        if not ok:
+            logger.error(why)
+            return
+        cap = HCIMonitorCapture(adapter=adapter, output_dir=output)
+        result = asyncio.run(cap.capture(duration=duration, save=True))
+        capture_file = result.output_file
+        if not capture_file:
+            logger.error("Capture produced no file")
+            return
+
+    if not capture_file:
+        capture_file = session.results.get("capture_file")
+    if not capture_file:
+        logger.error("No capture to analyse")
+        logger.info("  sudo meshbreaker privacy -d 1800")
+        logger.info("  meshbreaker privacy --capture output/hci_capture_123.json")
+        return
+
+    entries = load_capture(capture_file)
+    if entries is None:
+        return
+
+    logger.info(f"Analysing {len(entries)} frames for address linkability")
+    report = privacy_audit.analyse(entries)
+    privacy_audit.print_report(report)
+
+    session.store("privacy", {
+        "addresses": len(report.addresses),
+        "duration": report.duration,
+        "linked_groups": len(report.groups),
+        "rotating": len(report.rotating_addresses),
+    })
+    _save_session(session, output)
+
+
+@cli.command()
+@click.option("--capture", "capture_file", default=None, type=click.Path(exists=True),
               help="Capture JSON to decode (default: the last one in the session)")
 @click.option("--duration", "-d", default=None, type=float, metavar="SECONDS",
               help="Capture live first (Linux, root) instead of reading a file")
