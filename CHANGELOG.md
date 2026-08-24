@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 ### Added
+- CI now runs the test suite. The workflow linted, built the Docker image and
+  checked that `--help` loads, but never ran a single test — on Python 3.11,
+  3.12 and 3.13. It installs only what the tests import (`bleak`, `click`,
+  `rich`, `pycryptodome`) rather than `requirements.txt`, which also pulls
+  `bluepy` — unused anywhere in the code and a source build that would make
+  the job fail for nothing.
 - `hci-capture` command and `src/modules/hci_capture.py` — captures complete
   advertising payloads through the Linux HCI monitor socket (the interface
   `btmon` uses) and parses the AD structures itself, recovering the mesh AD
@@ -88,6 +94,12 @@
   integrity, corrupt capture handling and BLE error explanation.
 
 ### Fixed
+- Every report said `Devices found: 0`. `recon` filled `session.devices`, but
+  the session saver never wrote the field, so the next command reloaded an
+  empty list. Devices now survive the round trip.
+- A failed GATT enumeration left a bare `## GATT Enumeration` heading with
+  nothing under it. The section is emitted only when there is something to
+  report, and says so explicitly when no writable characteristic was found.
 - `hci-capture` returned an empty capture on any Bluetooth 5 controller.
   BlueZ switches to extended scanning by itself when the controller supports
   it, and reports then arrive as LE Extended Advertising Report (subevent

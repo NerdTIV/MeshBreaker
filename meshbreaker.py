@@ -58,6 +58,7 @@ def _load_session(output_dir: str) -> SessionState:
                 output_dir=output_dir,
             )
             s.results = data.get("results", {})
+            s.devices = data.get("devices", [])
             s.mesh_protocol = data.get("mesh_protocol")
             s.firmware_path = data.get("firmware_path")
             if hasattr(s, "target_ip"):
@@ -76,6 +77,7 @@ def _save_session(session: SessionState, output_dir: str):
         "scan_time":     session.scan_time,
         "mesh_protocol": session.mesh_protocol,
         "firmware_path": session.firmware_path,
+        "devices":       session.devices,
         "results":       session.results,
     }
     if hasattr(session, "target_ip"):

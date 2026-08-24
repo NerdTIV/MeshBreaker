@@ -153,13 +153,18 @@ class ReportGenerator:
             lines.append("")
 
         gatt = self.session.get("gatt")
-        if gatt:
+        surface = gatt.get("attack_surface", []) if isinstance(gatt, dict) else []
+        services = gatt.get("services", []) if isinstance(gatt, dict) else []
+        if surface or services:
             lines.append("## GATT Enumeration\n")
-            surface = gatt.get("attack_surface", []) if isinstance(gatt, dict) else []
+            if services:
+                lines.append(f"- Services read: {len(services)}")
             if surface:
-                lines.append(f"**Attack surface ({len(surface)} writable characteristics):**\n")
+                lines.append(f"\n**Attack surface ({len(surface)} writable characteristics):**\n")
                 for item in surface:
                     lines.append(f"- `{item.get('uuid')}` handle `{item.get('handle', 0):#06x}`")
+            else:
+                lines.append("- No writable characteristics found")
             lines.append("")
 
         prov_cap  = self.session.get("provisioning_capture", {})

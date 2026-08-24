@@ -416,6 +416,40 @@ def test_no_console_renders_emoji_shortcodes():
     assert not offenders, f"Console without emoji=False: {offenders}"
 
 
+def test_session_round_trip_keeps_devices(tmp_path):
+    """recon filled session.devices but the saver dropped the field.
+
+    Every later command reloaded a session with an empty list, so every
+    report said "Devices found: 0" no matter how large the scan was.
+    """
+    import meshbreaker
+    from src.core.session import SessionState
+
+    session = SessionState(output_dir=str(tmp_path))
+    session.devices = [{"mac": "AA:BB:CC:DD:EE:FF", "name": "x", "rssi": -60}]
+    meshbreaker._save_session(session, str(tmp_path))
+
+    reloaded = meshbreaker._load_session(str(tmp_path))
+    assert reloaded.devices == session.devices
+
+
+def test_report_skips_gatt_section_with_nothing_to_show(tmp_path):
+    """A failed enumeration left a bare heading with no content under it."""
+    from src.core.session import SessionState
+    from src.modules.report_generator import ReportGenerator
+
+    session = SessionState(output_dir=str(tmp_path))
+    session.results = {"gatt": {}}
+    path = ReportGenerator(session).generate("md", str(tmp_path))
+    assert "## GATT Enumeration" not in Path(path).read_text()
+
+    session.results = {"gatt": {"services": [{"uuid": "1800"}], "attack_surface": []}}
+    path = ReportGenerator(session).generate("md", str(tmp_path))
+    body = Path(path).read_text()
+    assert "## GATT Enumeration" in body
+    assert "No writable characteristics found" in body
+
+
 def test_cli_commands_do_not_shadow_builtins():
     """A click command named like a builtin shadows it for the whole module.
 
