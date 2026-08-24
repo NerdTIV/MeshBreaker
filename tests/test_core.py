@@ -343,6 +343,26 @@ def test_board_with_no_serial_port_still_reported(monkeypatch):
     assert found[0].port == ""
 
 
+def test_cli_commands_do_not_shadow_builtins():
+    """A click command named like a builtin shadows it for the whole module.
+
+    `def enumerate(...)` at module level in meshbreaker.py did exactly that,
+    and _print_devices() calls the builtin enumerate — so listing scan results
+    crashed. It only showed up once a real adapter found a device, because
+    with an empty result list the loop never runs.
+    """
+    import builtins
+    import meshbreaker
+
+    risky = ("enumerate", "list", "filter", "type", "id", "hash", "input",
+             "print", "range", "map", "set", "dict", "next", "open", "format")
+    for name in risky:
+        shadow = getattr(meshbreaker, name, None)
+        assert shadow is None or shadow is getattr(builtins, name), (
+            f"meshbreaker.{name} shadows the builtin — "
+            f"use @cli.command(\"{name}\") with a differently named function")
+
+
 # ── Orchestrator ─────────────────────────────────────────────────────────────
 
 from src.core.orchestrator import Orchestrator

@@ -256,12 +256,15 @@ def firmware(ctx, path, no_protocol_id):
     _save_session(session, output)
 
 
-@cli.command()
+# Named enumerate_cmd, not enumerate: a module-level "def enumerate" shadows
+# the builtin for the whole file, and _print_devices() calls the builtin. The
+# CLI name is unchanged.
+@cli.command("enumerate")
 @click.option("--target", "-t", default=None, metavar="MAC",
               help="Target BT MAC address")
 @click.option("--no-sdp", is_flag=True, help="Skip Bluetooth Classic SDP browse")
 @click.pass_context
-def enumerate(ctx, target, no_sdp):
+def enumerate_cmd(ctx, target, no_sdp):
     """GATT service enumeration + SDP browse."""
     _banner()
     output  = ctx.obj["output"]

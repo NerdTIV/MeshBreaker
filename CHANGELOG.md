@@ -26,6 +26,14 @@
   matches observed Network IDs against `k3(NetKey)` to tell you which nodes
   in range belong to your network.
 - `capture` now records service data, which it previously discarded.
+- `setup` missed an nRF52840 plugged in as a serial device: USB ID `2fe3:0004`
+  was not in the table, and serial ports were never enumerated at all, so a
+  connected dongle was reported as "no sniffer hardware detected". The report
+  now lists the port to point a tool at, warns when a board is on USB but
+  exposes no port (wrong firmware, or DFU mode) or when the port is not
+  writable, and reports boards on a known vendor ID even when the product ID
+  is one we have not seen — flashing firmware changes the product ID, so that
+  table will always lag reality.
 - `capture_io.profile_capture()` and `warn_if_mesh_blind()` — a capture that
   structurally cannot contain mesh traffic now says so, instead of reporting
   a clean-looking "nothing found". Wired into `provisioning`, `df` and
@@ -80,6 +88,14 @@
   integrity, corrupt capture handling and BLE error explanation.
 
 ### Fixed
+- `recon` crashed with `AttributeError: 'int' object has no attribute 'replace'`
+  as soon as a scan actually found a device. The `enumerate` CLI command is a
+  module-level `def enumerate(...)`, which shadows the builtin for the whole
+  file, and `_print_devices()` calls the builtin. With no adapter the device
+  list is always empty and the loop never runs, so the bug stayed invisible
+  until the first real scan. The command keeps its CLI name through
+  `@cli.command("enumerate")`; the function is now `enumerate_cmd`. A test
+  checks no command shadows a builtin.
 - `df_path_inject` segmented proxy PDUs against a hardcoded 20-byte assumption
   made before connecting, so it fragmented messages the link could have
   carried in one write. Segmentation now happens after connecting, against the
