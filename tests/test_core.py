@@ -555,6 +555,87 @@ def test_probe_counts_only_writable_characteristics(monkeypatch):
     assert [w["handle"] for w in result.writable] == [0x10, 0x14]
 
 
+def test_continuity_decodes_a_real_ibeacon():
+    """Captured off the air, so the whole TLV walk is exercised end to end."""
+    from src.modules.apple_continuity import from_manufacturer_data
+
+    raw = bytes.fromhex(
+        "ff4c00021574278bdab64445208f0c720eaf0599350000824dc5")
+    messages = from_manufacturer_data(raw)
+
+    assert len(messages) == 1
+    beacon = messages[0]
+    assert beacon.name == "iBeacon"
+    assert beacon.length == 21
+    assert beacon.fields["uuid"] == "74278bda-b644-4520-8f0c-720eaf059935"
+    assert beacon.fields["major"] == 0
+    assert beacon.fields["minor"] == 33357
+    assert beacon.fields["measured_power_dbm"] == -59
+
+
+def test_continuity_decodes_captured_nearby_and_find_my():
+    from src.modules.apple_continuity import from_manufacturer_data
+
+    nearby = from_manufacturer_data(bytes.fromhex("ff4c0010063f1e565b5e43"))
+    assert len(nearby) == 1
+    assert nearby[0].name == "Nearby Info"
+    assert nearby[0].fields["action_code"] == 3
+    assert nearby[0].fields["data_flags"] == 0x1E
+
+    find_my = from_manufacturer_data(bytes.fromhex("ff4c0012020003"))
+    assert find_my[0].name == "Find My"
+    assert find_my[0].fields["status"] == 0
+
+
+def test_continuity_names_unknown_types_without_inventing_fields():
+    """Apple documents none of this. An unrecognised type must stay raw."""
+    from src.modules.apple_continuity import from_manufacturer_data
+
+    messages = from_manufacturer_data(bytes.fromhex("ff4c0016080090284ab91b0d3b"))
+    assert len(messages) == 1
+    assert messages[0].name == "Unknown (0x16)"
+    assert messages[0].fields == {}
+    assert not messages[0].decoded
+    assert messages[0].data.hex() == "0090284ab91b0d3b"
+
+
+def test_continuity_stops_at_zero_padding():
+    """Devices pad the tail with zeros; that is not an endless type-0 message."""
+    from src.modules.apple_continuity import from_manufacturer_data
+
+    messages = from_manufacturer_data(
+        bytes.fromhex("ff4c000100000000000000000000000080000000"))
+    assert [m.type_id for m in messages] == [0x01]
+
+
+def test_continuity_accepts_both_capture_framings():
+    """Sniffer captures keep the AD type; bleak captures have stripped it."""
+    from src.modules.apple_continuity import from_manufacturer_data, is_apple
+
+    with_ad_type = bytes.fromhex("ff4c0012020003")
+    without = bytes.fromhex("4c0012020003")
+    assert is_apple(with_ad_type) and is_apple(without)
+    assert from_manufacturer_data(with_ad_type)[0].name == \
+           from_manufacturer_data(without)[0].name
+
+    assert not is_apple(bytes.fromhex("ff9ffe0000"))
+    assert from_manufacturer_data(b"") == []
+
+
+def test_continuity_ignores_non_apple_frames():
+    from src.modules.apple_continuity import analyse
+
+    entries = [
+        {"mac": "AA:BB:CC:DD:EE:FF", "ad_type": 0xFF, "raw": "ff4c0012020003"},
+        {"mac": "11:22:33:44:55:66", "ad_type": 0xFF, "raw": "ffe000010cca30f394"},
+        {"mac": "11:22:33:44:55:66", "ad_type": 0x16, "raw": "169ffe0000"},
+        {"mac": "99:99:99:99:99:99", "ad_type": 0xFF, "raw": "zz"},
+    ]
+    report = analyse(entries)
+    assert list(report.devices) == ["AA:BB:CC:DD:EE:FF"]
+    assert report.total_messages == 1
+
+
 def test_cli_commands_do_not_shadow_builtins():
     """A click command named like a builtin shadows it for the whole module.
 

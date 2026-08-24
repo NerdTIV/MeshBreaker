@@ -908,6 +908,75 @@ def hci_capture(ctx, duration, no_scan):
 
 @cli.command()
 @click.option("--capture", "capture_file", default=None, type=click.Path(exists=True),
+              help="Capture JSON to decode (default: the last one in the session)")
+@click.option("--duration", "-d", default=None, type=float, metavar="SECONDS",
+              help="Capture live first (Linux, root) instead of reading a file")
+@click.pass_context
+def continuity(ctx, capture_file, duration):
+    """Decode Apple Continuity messages from a capture.
+
+    \b
+    Apple devices announce Handoff, Find My, AirDrop and the rest through
+    manufacturer data under company ID 0x004C. It is a run of type-length
+    -value messages, none of it documented by Apple, and most of it neither
+    authenticated nor encrypted — so anything within radio range can read it.
+
+    \b
+    This turns those bytes into something you can read, and says which
+    messages carry state about the device or its owner.
+
+    \b
+    Examples:
+      sudo meshbreaker continuity -d 30
+      meshbreaker continuity --capture output/hci_capture_123.json
+    """
+    _banner()
+    output  = ctx.obj["output"]
+    adapter = ctx.obj["adapter"]
+    session = _load_session(output)
+
+    from src.modules import apple_continuity
+    from src.utils.capture_io import load_capture
+
+    if duration:
+        from src.modules.hci_capture import HCIMonitorCapture
+        ok, why = HCIMonitorCapture.available()
+        if not ok:
+            logger.error(why)
+            return
+        cap = HCIMonitorCapture(adapter=adapter, output_dir=output)
+        result = asyncio.run(cap.capture(duration=duration, save=True))
+        capture_file = result.output_file
+        if not capture_file:
+            logger.error("Capture produced no file")
+            return
+
+    if not capture_file:
+        capture_file = session.results.get("capture_file")
+    if not capture_file:
+        logger.error("No capture to read")
+        logger.info("  sudo meshbreaker continuity -d 30")
+        logger.info("  meshbreaker continuity --capture output/hci_capture_123.json")
+        return
+
+    entries = load_capture(capture_file)
+    if entries is None:
+        return
+
+    logger.info(f"Scanning {len(entries)} frames for Apple Continuity messages")
+    report = apple_continuity.analyse(entries)
+    apple_continuity.print_report(report)
+
+    session.store("continuity", {
+        "devices": len(report.devices),
+        "messages": report.total_messages,
+        "counts": report.message_counts,
+    })
+    _save_session(session, output)
+
+
+@cli.command()
+@click.option("--capture", "capture_file", default=None, type=click.Path(exists=True),
               help="Capture JSON to scan for PB-ADV traffic (default: last one in session)")
 @click.option("--target", "-t", default=None, metavar="MAC",
               help="Also probe this target for an exposed PB-GATT service")

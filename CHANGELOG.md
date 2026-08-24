@@ -3,6 +3,18 @@
 ## [Unreleased]
 
 ### Added
+- `continuity` command and `src/modules/apple_continuity.py` — decodes Apple
+  Continuity messages out of manufacturer data under company ID 0x004C.
+  Handoff, Find My, AirDrop, Nearby Info, Proximity Pairing and the rest ride
+  in a run of type-length-value messages that Apple does not document and
+  that are mostly neither authenticated nor encrypted, so anything in radio
+  range can read them. iBeacon is decoded in full; Handoff, Nearby Info,
+  Find My and Proximity Pairing expose the fields the public research
+  supports; anything else is named and handed back raw rather than guessed
+  at. The report says which messages carry state about the device or its
+  owner. Tested against payloads captured off the air, including a real
+  iBeacon and the zero padding that used to parse as an endless run of empty
+  messages.
 - `recon --fuzzable MAC[,MAC...]` connects to the devices you name and reports
   what a fuzzer could write to: connectable or not, negotiated MTU, service
   count and every writable characteristic. A scan cannot answer this —
