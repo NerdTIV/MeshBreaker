@@ -8,7 +8,7 @@ class PluginMeta:
     version:          str
     description:      str
     author:           str
-    category:         str   # recon | capture | firmware | fuzz | exploit | post
+    category:         str
     phase:            int = 0
     requires_bt:      bool = True
     requires_root:    bool = False
@@ -24,8 +24,6 @@ class PluginBase(ABC):
         self.target  = target
         self.adapter = adapter
         self.session = session
-        # Extra options from the command line, e.g. --netkey or --opt key=value.
-        # Optional so plugins written before this existed keep working.
         self.config  = config or {}
         self.results = {}
 

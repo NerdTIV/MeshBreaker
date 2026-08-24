@@ -13,7 +13,7 @@ _SIG_DB_PATH = Path(__file__).parent.parent.parent / "data" / "mesh_signatures.j
 class ProtocolMatch:
     protocol_id:  str
     name:         str
-    confidence:   int          # 0–100
+    confidence:   int
     evidence:     list[str]    = field(default_factory=list)
     cve_tags:     list[str]    = field(default_factory=list)
 

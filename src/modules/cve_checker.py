@@ -24,7 +24,6 @@ class CVEChecker:
     def __init__(self):
         self._db = self._load_db()
 
-    # public API
     def check_all(self, context: dict):
         matches: list[CVEMatch] = []
         for entry in self._db.get("entries", []):
@@ -54,14 +53,12 @@ class CVEChecker:
         matches.sort(key=lambda x: float(x.cvss or 0), reverse=True)
         return matches
 
-    # match logic
     def _match_entry(self, entry: dict, ctx: dict):
         matched_on: list[str] = []
 
         hints = entry.get("detection_hints", [])
         tags  = [t.lower() for t in entry.get("tags", [])]
 
-        # Kernel version check
         kv = ctx.get("kernel_version", "")
         if kv:
             for h in hints:
@@ -73,7 +70,6 @@ class CVEChecker:
                         if current and current < threshold:
                             matched_on.append(f"kernel {kv} < {m.group(1)}")
 
-        # BlueZ version check
         bv = ctx.get("bluez_version", "")
         if bv:
             for h in hints:
@@ -85,19 +81,16 @@ class CVEChecker:
                         if current and current < threshold:
                             matched_on.append(f"BlueZ {bv} < {m.group(1)}")
 
-        # runc version
         rv = ctx.get("runc_version", "")
         if rv and any("runc" in h.lower() for h in hints):
             matched_on.append(f"runc {rv} detected")
 
-        # Protocol tags
         proto_tags = set(t.lower() for t in ctx.get("protocol_tags", []))
         entry_tags = set(tags)
         overlap = proto_tags & entry_tags
         if overlap:
             matched_on.extend([f"tag: {t}" for t in overlap])
 
-        # Custom free-form tags
         custom = set(t.lower() for t in ctx.get("custom_tags", []))
         cust_overlap = custom & entry_tags
         if cust_overlap:

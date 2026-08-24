@@ -132,7 +132,6 @@ class MultiAdapterSniffer:
     def _save(self) -> str:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         dest = self.output_dir / f"sniff_{int(time.time())}.json"
-        # Same shape as passive_capture output so parse-capture can read it.
         data = [
             {"t": h.timestamp, "mac": h.mac, "name": h.name, "rssi": h.rssi,
              "ad_type": 0xFF if h.raw else None, "raw": h.raw,
@@ -198,7 +197,7 @@ class SniffleBackend:
             subprocess.run(cmd, timeout=duration + 10,
                            stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         except subprocess.TimeoutExpired:
-            pass          # expected — we stop it by timeout
+            pass
         except Exception as e:
             logger.error(f"Sniffle failed: {e}")
             return {"error": str(e)}
@@ -234,7 +233,6 @@ class UbertoothBackend:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         pcap = str(self.output_dir / f"ubertooth_{int(time.time())}.pcap")
 
-        # -f follows connections, -p recovers an existing one promiscuously.
         cmd = [self.TOOL, "-p" if promiscuous else "-f", "-c", pcap]
         if target_mac:
             cmd += ["-t", target_mac]
@@ -268,7 +266,6 @@ def follow_from_connect_ind(connect_ind_hex: str, events: int = 20,
         logger.error("CONNECT_IND is not valid hex")
         return {"error": "invalid hex"}
 
-    # Tolerate a leading 2-byte advertising header.
     if len(payload) == 36:
         payload = payload[2:]
 
@@ -309,8 +306,6 @@ def _print_sniff_summary(result: SniffResult, seen_per_adapter: dict):
     t.add_row("Unique devices", str(result.unique_devices))
     console.print(t)
 
-    # Devices only one adapter saw are the interesting ones: either weak signal
-    # or an advert that only landed on a channel the other adapter missed.
     all_macs = {h.mac for h in result.hits}
     if len(seen_per_adapter) > 1 and all_macs:
         exclusive = defaultdict(list)
@@ -324,7 +319,6 @@ def _print_sniff_summary(result: SniffResult, seen_per_adapter: dict):
                 logger.info(f"  {adapter}: {', '.join(macs[:5])}"
                             + (f" (+{len(macs)-5} more)" if len(macs) > 5 else ""))
 
-    # Rough direction finding: strongest average RSSI per adapter.
     if len(result.adapters_used) > 1:
         best_rssi: dict[str, tuple[str, int]] = {}
         for h in result.hits:

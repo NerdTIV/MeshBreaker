@@ -33,7 +33,6 @@ PDU_MESH_BCN  = 0x01
 PDU_PROXY_CFG = 0x02
 PDU_PROV_PDU  = 0x03
 
-# SIG Mesh Network PDU structure (simplified)
 _IVI_NID_MASK = 0x7F
 
 
@@ -43,7 +42,7 @@ def _craft_network_pdu(ivi: int = 0, nid: int = 0x68,
                         dst: int = 0xFFFF, payload: bytes = b"\x00"):
     byte0 = ((ivi & 1) << 7) | (nid & 0x7F)
     byte1 = ((ctl & 1) << 7) | (ttl & 0x7F)
-    seq_bytes = struct.pack(">I", seq)[1:]  # 3 bytes
+    seq_bytes = struct.pack(">I", seq)[1:]
     hdr = struct.pack(">BB", byte0, byte1) + seq_bytes + struct.pack(">HH", src, dst)
     return hdr + payload
 
@@ -110,15 +109,12 @@ class MeshFuzzer:
         return MeshFuzzResult(strategy, payload, self.target, crashed=crashed,
                               elapsed_ms=elapsed)
 
-    # payload generators
     def _gen_net_pdus(self):
         out = []
         for seq in [0, 0xFFFFFF, 0x7FFFFF]:
             p = _craft_network_pdu(seq=seq, dst=0xFFFF)
             out.append(("net_pdu", p))
-        # All-zeros PDU
         out.append(("net_pdu", b"\x00" * 18))
-        # All-ones
         out.append(("net_pdu", b"\xFF" * 18))
         return out
 
@@ -146,7 +142,6 @@ class MeshFuzzer:
         return out
 
     def _gen_seq_replay(self):
-        # Replayed sequence numbers → should trigger replay protection
         return [
             ("seq_replay", _craft_network_pdu(seq=0, payload=b"\x01\x02\x03")),
             ("seq_replay", _craft_network_pdu(seq=0, payload=b"\x01\x02\x03")),

@@ -39,12 +39,10 @@ from dataclasses import dataclass, field
 
 from src.utils import logger
 
-# Total BLE channels, and the 3 reserved for advertising.
 NUM_CHANNELS = 40
 NUM_DATA_CHANNELS = 37
 ADV_CHANNELS = (37, 38, 39)
 
-# hopIncrement is a 5-bit field but the spec restricts it to this range.
 HOP_INCREMENT_MIN = 5
 HOP_INCREMENT_MAX = 16
 
@@ -76,8 +74,6 @@ def freq_to_channel(freq_mhz: int) -> int | None:
     return None
 
 
-# The three non-overlapping Wi-Fi channels are the ones actually deployed, so
-# those are the ones worth warning about. Each is 22 MHz wide.
 WIFI_CHANNELS = {1: 2412, 6: 2437, 11: 2462}
 
 
@@ -106,12 +102,12 @@ class ConnectionParams:
     crc_init: int = 0
     win_size: int = 0
     win_offset: int = 0
-    interval: int = 0          # in units of 1.25 ms
+    interval: int = 0
     latency: int = 0
-    timeout: int = 0           # in units of 10 ms
-    channel_map: int = 0       # 37-bit bitmask, bit N set = channel N in use
+    timeout: int = 0
+    channel_map: int = 0
     hop_increment: int = 0
-    sca: int = 0               # sleep clock accuracy index
+    sca: int = 0
     init_addr: str = ""
     adv_addr: str = ""
 
@@ -187,8 +183,6 @@ def parse_connect_ind(payload: bytes) -> ConnectionParams:
     )
 
 
-# Channel Selection Algorithm #1
-
 def hop_algo1(params: ConnectionParams, events: int = 20,
               start_unmapped: int = 0) -> list[int]:
     """Predict the next `events` channels using algorithm #1.
@@ -209,12 +203,9 @@ def hop_algo1(params: ConnectionParams, events: int = 20,
         if unmapped in used:
             sequence.append(unmapped)
         else:
-            # Remap: index into the used-channel list.
             sequence.append(used[unmapped % len(used)])
     return sequence
 
-
-# Channel Selection Algorithm #2 (Bluetooth 5.0+)
 
 def _bit_reverse_8(value: int) -> int:
     return int(f"{value & 0xFF:08b}"[::-1], 2)
@@ -260,7 +251,6 @@ def hop_algo2(params: ConnectionParams, events: int = 20,
         if candidate in used:
             sequence.append(candidate)
         else:
-            # Remap by scaling the PRN across the used-channel list.
             index = (len(used) * prn) >> 16
             sequence.append(used[index])
     return sequence

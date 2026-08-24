@@ -14,7 +14,7 @@ class MeshNode:
     rssi_avg: float = 0.0
     packets:  int = 0
     protocol: str | None = None
-    roles:    list[str] = field(default_factory=list)  # provisioner | relay | proxy | friend | lpn
+    roles:    list[str] = field(default_factory=list)
     raw_samples: list[bytes] = field(default_factory=list)
 
 
@@ -29,7 +29,6 @@ class MeshTopology:
 _MSG_AD_TYPE   = 0x2A
 _BEACON_AD_TYPE = 0x2B
 
-# SIG Mesh beacon types
 _UNPROVISIONED = 0x00
 _SECURE_NETWORK = 0x01
 
@@ -57,7 +56,6 @@ class MeshFrameParser:
     def topology(self):
         return self._topology
 
-    # internals
     def _process_entry(self, entry: dict):
         mac      = entry.get("mac", "??:??:??:??:??:??")
         name     = entry.get("name", "")
@@ -94,16 +92,14 @@ class MeshFrameParser:
                 if "unprovisioned" not in node.roles:
                     node.roles.append("unprovisioned")
             elif beacon_type == _SECURE_NETWORK:
-                # Secure Network Beacon: contains IV index + flags
                 if "provisioned" not in node.roles:
                     node.roles.append("provisioned")
                 if len(raw) >= 3:
                     flags = raw[2]
-                    if flags & 0x02:  # Key Refresh flag
+                    if flags & 0x02:
                         node.roles.append("key_refresh")
 
         elif ad_type == _MSG_AD_TYPE:
-            # Network PDU — node is actively participating
             if "active" not in node.roles:
                 node.roles.append("active")
 

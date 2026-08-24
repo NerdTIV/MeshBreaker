@@ -47,11 +47,8 @@ def test_protocol_identifier_uuid_match():
     pi = ProtocolIdentifier()
     devices = [{"uuids": ["1827"], "manufacturer_data": {}, "name": "", "service_data": {}}]
     results = pi.from_devices(devices)
-    # BT Mesh Provisioning UUID — should match if in DB
     assert isinstance(results, list)
 
-
-# ── Channel map + hopping ────────────────────────────────────────────────────
 
 import struct
 
@@ -72,11 +69,9 @@ def _fake_connect_ind(hop=11, channel_map_bits=0x1FFFFFFFFF, aa=0x8E89BED6):
 
 
 def test_channel_frequencies():
-    # The 3 advertising channels sit where everyone expects them.
     assert cm.channel_to_freq(37) == 2402
     assert cm.channel_to_freq(38) == 2426
     assert cm.channel_to_freq(39) == 2480
-    # 40 channels, no duplicate frequencies, 2 MHz apart.
     freqs = sorted(cm.channel_to_freq(c) for c in range(cm.NUM_CHANNELS))
     assert len(set(freqs)) == 40
     assert freqs[0] == 2402 and freqs[-1] == 2480
@@ -89,7 +84,6 @@ def test_freq_to_channel_roundtrip():
 
 
 def test_channel_39_is_clear_of_common_wifi():
-    # 2480 MHz sits above WiFi 11, which is why it is usually the cleanest.
     assert cm.wifi_overlap(39) is None
     assert cm.wifi_overlap(37) == "WiFi-1"
 
@@ -122,12 +116,10 @@ def test_hop_algo2_is_deterministic():
     second = cm.hop_algo2(params, events=15)
     assert first == second
     assert all(0 <= c < 37 for c in first)
-    # Not a fixed step, unlike algorithm 1.
     assert first != cm.hop_algo1(params, events=15)
 
 
 def test_hop_remapping_stays_inside_used_channels():
-    # Only channels 0-4 enabled — both algorithms must remap into that set.
     params = cm.parse_connect_ind(_fake_connect_ind(channel_map_bits=0b11111))
     assert params.used_channels == [0, 1, 2, 3, 4]
     for sequence in (cm.hop_algo1(params, events=40), cm.hop_algo2(params, events=40)):
@@ -138,8 +130,6 @@ def test_channel_identifier_matches_spec_formula():
     params = cm.parse_connect_ind(_fake_connect_ind(aa=0x12345678))
     assert params.channel_identifier == (0x1234 ^ 0x5678)
 
-
-# ── Provisioning ─────────────────────────────────────────────────────────────
 
 from src.modules import provisioning as prov
 
@@ -213,8 +203,6 @@ def test_capture_without_provisioning_is_quiet(tmp_path):
     assert analyzer.findings == []
 
 
-# ── Directed Forwarding ──────────────────────────────────────────────────────
-
 from src.modules import directed_forwarding as df
 
 
@@ -267,8 +255,6 @@ def test_decode_control_pdu():
     assert df.decode_control_pdu(bytes([0x7F]))["is_df"] is False
     assert df.decode_control_pdu(b"") is None
 
-
-# ── Adapter manager ──────────────────────────────────────────────────────────
 
 from src.core import adapter_manager as am
 
@@ -363,8 +349,6 @@ def test_cli_commands_do_not_shadow_builtins():
             f"use @cli.command(\"{name}\") with a differently named function")
 
 
-# ── Orchestrator ─────────────────────────────────────────────────────────────
-
 from src.core.orchestrator import Orchestrator
 
 
@@ -391,8 +375,6 @@ def test_chain_skips_phases_needing_a_target():
     assert results[0].status == "skipped"
     assert "target" in results[0].detail
 
-
-# ── Report generator ─────────────────────────────────────────────────────────
 
 from src.modules.report_generator import ReportGenerator
 
@@ -442,8 +424,6 @@ def test_report_includes_the_new_sections(tmp_path):
     assert "0x8E89BED6" in text
 
 
-# ── CVE database integrity ───────────────────────────────────────────────────
-
 import json
 
 from src.modules.cve_checker import CVEChecker
@@ -464,7 +444,6 @@ def test_every_cve_has_the_fields_the_checker_reads():
     for entry in _cve_db()["entries"]:
         for field_name in ("cve_id", "name", "severity", "description", "tags"):
             assert field_name in entry, f"{entry.get('cve_id')} is missing {field_name}"
-        # check_all() sorts on float(cvss or 0) — an unparseable value crashes it.
         float(entry.get("cvss") or 0)
 
 
@@ -484,12 +463,6 @@ def test_sig_mesh_tag_matches_the_provisioning_cves():
 def test_unknown_tag_matches_nothing():
     assert CVEChecker().check_all({"protocol_tags": ["not_a_real_protocol"]}) == []
 
-
-# ── Mesh network crypto ──────────────────────────────────────────────────────
-#
-# The vectors below are the published sample data from Mesh Profile 1.0.1.
-# If these ever fail, the crypto is wrong and nothing built on it can be
-# trusted — treat a failure here as blocking.
 
 from src.modules import mesh_crypto as mc
 
@@ -517,7 +490,6 @@ def test_k4_matches_spec_vector():
 
 
 def test_network_pdu_matches_spec_sample_message():
-    # Mesh Profile 1.0.1 section 8.3.1, sample message #1.
     pdu = mc.build_network_pdu(
         net_key=SAMPLE_NETKEY, iv_index=SAMPLE_IV_INDEX,
         transport_pdu=bytes.fromhex("034b50057e400000010000"),
@@ -546,7 +518,6 @@ def test_wrong_netkey_is_rejected_not_misparsed():
 
 
 def test_control_messages_use_a_64_bit_mic():
-    # Same inputs, only CTL differs: the control PDU carries 4 more MIC bytes.
     control = mc.build_network_pdu(SAMPLE_NETKEY, SAMPLE_IV_INDEX, b"\x01",
                                    src=1, dst=2, ctl=1)
     access = mc.build_network_pdu(SAMPLE_NETKEY, SAMPLE_IV_INDEX, b"\x01",
@@ -573,18 +544,15 @@ def test_build_network_pdu_rejects_bad_input():
 
 
 def test_proxy_pdu_segmentation():
-    # Short payload fits in one complete write.
     single = mc.wrap_proxy_pdu(b"\x01" * 10, att_mtu=23)
     assert len(single) == 1
     assert single[0][0] == (mc.SAR_COMPLETE << 6) | mc.PROXY_NETWORK_PDU
 
-    # Long payload is split into first / continuation / last.
     chunks = mc.wrap_proxy_pdu(b"\x01" * 50, att_mtu=23)
     assert len(chunks) == 3
     assert chunks[0][0] >> 6 == mc.SAR_FIRST
     assert chunks[1][0] >> 6 == mc.SAR_CONTINUATION
     assert chunks[2][0] >> 6 == mc.SAR_LAST
-    # Reassembling the payloads gives the original back.
     assert b"".join(c[1:] for c in chunks) == b"\x01" * 50
 
 
@@ -597,8 +565,6 @@ def test_parse_key_validation():
     with pytest.raises(ValueError):
         mc.parse_key("zz" * 16)
 
-
-# ── DF path injection plugin ─────────────────────────────────────────────────
 
 from src.plugins.df_path_inject import DFPathInjectPlugin, build_path_request
 
@@ -624,13 +590,12 @@ def test_plugin_dry_run_builds_a_decryptable_pdu():
     assert result["transmitted"] is False
     assert result["opcode_name"] == "PATH_REQUEST"
 
-    # The whole point: a real node must be able to decrypt what we built.
     parsed = mc.parse_network_pdu(SAMPLE_NETKEY, SAMPLE_IV_INDEX,
                                   bytes.fromhex(result["network_pdu"]))
     assert parsed is not None
     assert parsed["ctl"] == 1
     assert parsed["src"] == 0x0001
-    assert parsed["transport_pdu"][0] == 0x01      # PATH_REQUEST opcode
+    assert parsed["transport_pdu"][0] == 0x01
 
 
 def test_plugin_raw_params_passthrough():
@@ -666,14 +631,11 @@ def test_path_request_parameter_layout():
 
 
 def test_plugins_still_load_without_a_config():
-    # Plugins written before config existed must keep working.
     from src.plugins.example_plugin import ExamplePlugin
     plugin = ExamplePlugin(target="AA:BB:CC:DD:EE:FF", adapter="hci0")
     assert plugin.config == {}
     assert plugin.option("anything") is None
 
-
-# ── Capture file loading (untrusted input) ───────────────────────────────────
 
 from src.utils.capture_io import decode_frames, frame_bytes, load_capture
 
@@ -712,8 +674,8 @@ def test_load_capture_drops_non_dict_entries(tmp_path):
 
 def test_frame_bytes_handles_bad_hex():
     assert frame_bytes({"raw": "2b01"}) == b"\x2b\x01"
-    assert frame_bytes({"raw": "zzzz"}) is None      # not hex
-    assert frame_bytes({"raw": "abc"}) is None       # odd length
+    assert frame_bytes({"raw": "zzzz"}) is None
+    assert frame_bytes({"raw": "abc"}) is None
     assert frame_bytes({"raw": ""}) is None
     assert frame_bytes({}) is None
 
@@ -722,7 +684,7 @@ def test_decode_frames_counts_bad_ones():
     entries = [{"raw": "2b01"}, {"raw": "zzzz"}, {"raw": ""}, {"raw": "2a00"}]
     good, bad = decode_frames(entries)
     assert len(good) == 2
-    assert bad == 1          # the empty one is absent, not malformed
+    assert bad == 1
 
 
 def test_parsers_do_not_crash_on_a_corrupt_capture(tmp_path):
@@ -746,8 +708,6 @@ def test_parsers_do_not_crash_on_a_corrupt_capture(tmp_path):
         assert prov.ProvisioningAnalyzer().parse_file(str(path)) == []
 
 
-# ── BLE error explanation ────────────────────────────────────────────────────
-
 from src.core.adapter_manager import explain_ble_error
 
 
@@ -764,15 +724,13 @@ def test_missing_adapter_and_permissions_are_recognised():
 
 
 def test_unrecognised_errors_return_empty_so_callers_reraise():
-    # An empty hint is the signal to re-raise rather than swallow a real bug.
     assert explain_ble_error(ValueError("something else entirely")) == ""
 
 
 def test_proxy_payload_size_accounts_for_att_and_proxy_headers():
-    # ATT write costs 3 octets, the proxy header 1 more.
-    assert mc.proxy_payload_size(23) == 19        # BLE default
-    assert mc.proxy_payload_size(247) == 243      # commonly negotiated max
-    assert mc.proxy_payload_size(4) == 1          # never returns 0 or negative
+    assert mc.proxy_payload_size(23) == 19
+    assert mc.proxy_payload_size(247) == 243
+    assert mc.proxy_payload_size(4) == 1
 
 
 def test_higher_mtu_means_fewer_writes():
@@ -782,7 +740,6 @@ def test_higher_mtu_means_fewer_writes():
     at_negotiated = mc.wrap_proxy_pdu(payload, att_mtu=247)
     assert len(at_default) == 3
     assert len(at_negotiated) == 1
-    # Either way the node reassembles the same bytes.
     assert b"".join(c[1:] for c in at_default) == payload
     assert at_negotiated[0][1:] == payload
 
@@ -798,7 +755,6 @@ def test_negotiated_mtu_reads_the_client():
 def test_negotiated_mtu_falls_back_on_a_useless_value():
     from src.plugins.df_path_inject import _negotiated_mtu
 
-    # WinRT can report 0 before the first operation; some backends omit it.
     class Zero:
         mtu_size = 0
 
@@ -818,7 +774,6 @@ def test_forced_mtu_overrides_the_client_but_not_below_the_minimum():
     class Client:
         mtu_size = 23
     assert _negotiated_mtu(Client(), forced="185") == 185
-    # A forced value below the BLE minimum would over-fragment; clamp it.
     assert _negotiated_mtu(Client(), forced="8") == mc.DEFAULT_ATT_MTU
 
 
@@ -831,14 +786,11 @@ def test_dry_run_reports_the_mtu_it_assumed():
     assert result["proxy_pdus"]
 
 
-# ── Capture profiling: telling "clean" apart from "cannot tell" ──────────────
-
 from src.utils.capture_io import (MESH_AD_TYPES, profile_capture,
                                   warn_if_mesh_blind)
 
 
 def test_bleak_capture_is_recognised_as_mesh_blind():
-    # What passive_capture writes: manufacturer data only, ad_type 0xFF.
     entries = [{"mac": "AA", "ad_type": 0xFF, "raw": "7700abcd"} for _ in range(5)]
     profile = profile_capture(entries)
     assert profile.source == "bleak"
@@ -877,8 +829,6 @@ def test_provisioning_flags_a_blind_capture(tmp_path):
     assert analyzer.mesh_blind is True
 
 
-# ── Mesh service data: what a standard adapter CAN see ───────────────────────
-
 def _service_entry(mac, uuid_short, payload_hex, rssi=-60):
     return {"mac": mac, "rssi": rssi,
             "service_data": {f"0000{uuid_short}-0000-1000-8000-00805f9b34fb": payload_hex}}
@@ -897,7 +847,6 @@ def test_unprovisioned_node_without_oob_is_high():
 
 def test_unprovisioned_node_with_oob_is_only_medium():
     device_uuid = bytes(range(16)).hex()
-    # bit 5 = Number, bit 14 = On device
     entries = [_service_entry("AA:BB:CC:00:00:02", "1827", device_uuid + "4020")]
     analyzer = prov.MeshServiceDataAnalyzer()
     unprovisioned, _ = analyzer.parse_entries(entries)
@@ -942,8 +891,6 @@ def test_service_data_analyzer_survives_junk():
     assert unprovisioned == [] and proxies == []
 
 
-# ── HCI monitor capture ──────────────────────────────────────────────────────
-
 from src.modules import hci_capture as hci
 
 
@@ -960,9 +907,7 @@ def test_ad_structures_are_split_correctly():
 
 def test_ad_parsing_survives_truncation_and_padding():
     assert hci.parse_ad_structures(b"") == []
-    # Declared length runs past the buffer: keep what parsed, do not crash.
     assert hci.parse_ad_structures(bytes([5, 0x2B, 0x01])) == []
-    # Zero length is the end-of-data marker.
     assert len(hci.parse_ad_structures(bytes([2, 0x01, 0x06, 0, 0, 0]))) == 1
 
 
@@ -972,14 +917,14 @@ def test_le_advertising_report_parsing():
               + bytes([len(payload)]) + payload + struct.pack("b", -55))
     parsed = hci.parse_le_advertising_report(report)
     assert len(parsed) == 1
-    assert parsed[0]["mac"] == "11:22:33:44:55:66"   # little-endian on the wire
+    assert parsed[0]["mac"] == "11:22:33:44:55:66"
     assert parsed[0]["rssi"] == -55
 
 
 def test_le_advertising_report_survives_truncation():
     assert hci.parse_le_advertising_report(b"") == []
-    assert hci.parse_le_advertising_report(bytes([5])) == []       # claims 5, has none
-    assert hci.parse_le_advertising_report(bytes([1, 0x03])) == []  # cut mid-report
+    assert hci.parse_le_advertising_report(bytes([5])) == []
+    assert hci.parse_le_advertising_report(bytes([1, 0x03])) == []
 
 
 def test_monitor_packet_extraction():
@@ -998,7 +943,6 @@ def test_monitor_packet_extraction():
 def test_monitor_ignores_non_event_packets():
     assert hci._parse_monitor_packet(b"") == []
     assert hci._parse_monitor_packet(b"\x00\x00") == []
-    # A command packet, not an event.
     assert hci._parse_monitor_packet(struct.pack("<HHH", hci.MON_COMMAND_PKT, 0, 0)) == []
 
 
@@ -1015,7 +959,6 @@ def test_hci_capture_records_one_frame_per_ad_structure():
     assert mesh_frame["mesh"] == "sig_mesh"
     assert capture.session.mesh_frames == 1
 
-    # And the profiler must recognise it as mesh-capable.
     profile = profile_capture(capture.session.frames)
     assert profile.carries_mesh_ad_types is True
     assert profile.source == "sniffer"
@@ -1023,7 +966,6 @@ def test_hci_capture_records_one_frame_per_ad_structure():
 
 def test_hci_capture_reports_why_it_cannot_run():
     ok, reason = hci.HCIMonitorCapture.available()
-    # Either it works, or it says something useful about why not.
     assert ok or reason
 
 
@@ -1056,8 +998,8 @@ def test_read_loop_decodes_mesh_over_a_socketpair():
         _monitor_packet("665544332211", flags + mesh_beacon),
         _monitor_packet("665544332211", flags + pb_adv),
         _monitor_packet("aabbccddeeff", local_name + mesh_message, rssi=-70),
-        struct.pack("<HHH", hci.MON_COMMAND_PKT, 0, 0),   # command, not an event
-        b"\x00\x00",                                       # runt
+        struct.pack("<HHH", hci.MON_COMMAND_PKT, 0, 0),
+        b"\x00\x00",
     ]
 
     async def run():
@@ -1078,18 +1020,15 @@ def test_read_loop_decodes_mesh_over_a_socketpair():
 
     session = asyncio.run(run())
 
-    # One frame per AD structure, mesh types recovered, junk ignored.
     assert len(session.frames) == 6
     assert session.mesh_frames == 3
     assert session.ad_types[0x2B] == 1
     assert session.ad_types[0x29] == 1
     assert session.ad_types[0x2A] == 1
 
-    # The local name is carried onto every frame from that advert.
     named = [f for f in session.frames if f["mac"] == "FF:EE:DD:CC:BB:AA"]
     assert named and all(f["name"] == "Node" for f in named)
 
-    # And the result must be usable by the mesh parsers.
     profile = profile_capture(session.frames)
     assert profile.carries_mesh_ad_types is True
     assert profile.source == "sniffer"
@@ -1104,7 +1043,6 @@ def test_read_loop_stops_on_a_closed_socket():
         rx.setblocking(False)
         tx.close()
         capture = hci.HCIMonitorCapture()
-        # Must return on the duration rather than spin or raise.
         await capture.read_loop(rx, duration=0.6)
         rx.close()
         return capture.session

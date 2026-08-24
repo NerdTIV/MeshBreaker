@@ -63,19 +63,13 @@ class MyMeshAttackPlugin(PluginBase):
             async with BleakClient(self.target, adapter=self.adapter) as client:
                 logger.success(f"Connected to {self.target}")
 
-                # Replace this with your actual payload.
                 my_payload = bytes([0x00] * 20)
 
                 await client.write_gatt_char(PROXY_IN, my_payload, response=True)
                 logger.info(f"Sent {len(my_payload)} bytes")
 
-                # To read the response:
-                # response = await client.read_gatt_char(PROXY_OUT)
-                # logger.info(f"Got: {response.hex()}")
 
         except Exception as e:
-            # "Not connected" → device moved or disconnected
-            # "GATT Error"    → characteristic missing or access denied
             logger.error(f"Attack failed: {e}")
             return {"error": str(e)}
 

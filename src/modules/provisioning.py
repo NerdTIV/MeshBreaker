@@ -45,13 +45,11 @@ from src.utils import logger
 from src.utils.capture_io import (decode_frames, load_capture,
                                   profile_capture, warn_if_mesh_blind)
 
-# PB-ADV lives in this AD type. PB-GATT uses the service UUID below.
 PB_ADV_AD_TYPE = 0x29
 MESH_PROVISIONING_SERVICE = "1827"
 MESH_PROV_DATA_IN = "00002adb-0000-1000-8000-00805f9b34fb"
 MESH_PROV_DATA_OUT = "00002adc-0000-1000-8000-00805f9b34fb"
 
-# Generic Provisioning Control Format, low 2 bits of the first GP byte.
 GPCF_START = 0b00
 GPCF_ACK = 0b01
 GPCF_CONTINUATION = 0b10
@@ -79,10 +77,9 @@ AUTH_METHODS = {
     0x03: "Input OOB",
 }
 
-# Algorithms bitfield in the Capabilities PDU.
 ALGORITHMS = {
     0: "FIPS P-256 Elliptic Curve (CMAC-AES128)",
-    1: "FIPS P-256 Elliptic Curve (HMAC-SHA256)",   # added in Mesh 1.1
+    1: "FIPS P-256 Elliptic Curve (HMAC-SHA256)",
 }
 
 OUTPUT_OOB_ACTIONS = {
@@ -130,7 +127,7 @@ class ProvisioningCapabilities:
 
 @dataclass
 class ProvisioningFinding:
-    severity: str          # CRITICAL | HIGH | MEDIUM | LOW | INFO
+    severity: str
     title: str
     detail: str
     cve: str = ""
@@ -227,7 +224,6 @@ def parse_pb_adv(raw: bytes) -> dict | None:
         out["data"] = gp[1:].hex()
         return out
 
-    # Transaction Start: SegN | GPCF, TotalLength (2), FCS (1), then payload.
     if len(gp) < 5:
         return None
     out["type"] = "start"
@@ -250,7 +246,6 @@ class ProvisioningAnalyzer:
     def __init__(self):
         self.sessions: dict[int, ProvisioningSession] = {}
         self.findings: list[ProvisioningFinding] = []
-        # True when the capture could not have held PB-ADV in the first place.
         self.mesh_blind = False
 
     def parse_file(self, path: str) -> list[ProvisioningSession]:
@@ -260,15 +255,12 @@ class ProvisioningAnalyzer:
 
         logger.info(f"Scanning {len(entries)} captured frames for provisioning traffic")
 
-        # Say up front if this capture is structurally unable to hold PB-ADV,
-        # so "0 sessions" is not mistaken for "provisioning looks fine".
         profile = profile_capture(entries)
         self.mesh_blind = warn_if_mesh_blind(profile, "PB-ADV provisioning traffic")
 
         frames, _ = decode_frames(entries)
 
         for entry, raw in frames:
-            # Skip the AD type byte when the capture kept it.
             if raw[0] == PB_ADV_AD_TYPE:
                 raw = raw[1:]
             elif len(raw) < 6:
@@ -476,31 +468,12 @@ def print_sessions(sessions: list[ProvisioningSession], findings: list[Provision
             logger.info(f"  {f.detail}")
 
 
-# ── Mesh service data: what a standard adapter CAN see ───────────────────────
-#
-# BlueZ never hands over raw AD structures, so PB-ADV (0x29) is invisible to
-# bleak. But it does surface service data, and the two mesh services advertise
-# there. That is the one mesh signal reachable without a sniffer:
-#
-#   Service Data for UUID 0x1827 (Mesh Provisioning)
-#       Device UUID (16 bytes) + OOB Information (2 bytes)
-#       Sent by an UNPROVISIONED node telling the world it is joinable.
-#
-#   Service Data for UUID 0x1828 (Mesh Proxy)
-#       0x00 + Network ID (8 bytes)          -- node advertising its network
-#       0x01 + Hash (8) + Random (8)         -- node advertising its identity
-#
-# Finding a device beaconing 0x1827 in a deployed estate is a real result: it
-# is either an unprovisioned spare nobody configured, or a node that has been
-# reset and is waiting for whoever provisions it first.
-
 MESH_PROV_SERVICE_UUID = "1827"
 MESH_PROXY_SERVICE_UUID = "1828"
 
 PROXY_ID_NETWORK = 0x00
 PROXY_ID_NODE = 0x01
 
-# OOB Information bitmap advertised by an unprovisioned device (Mesh 3.10.3).
 OOB_INFO_BITS = {
     0: "Other",
     1: "Electronic / URI",
@@ -581,8 +554,6 @@ class MeshServiceDataAnalyzer:
     """Recover mesh state from service data — the standard-adapter path."""
 
     def __init__(self, net_key: bytes | None = None):
-        # Optional: lets us tell whether a proxy node belongs to a network we
-        # hold the key for, by comparing against k3(NetKey).
         self.net_key = net_key
         self.unprovisioned: dict[str, UnprovisionedDevice] = {}
         self.proxies: dict[str, ProxyNode] = {}
@@ -657,8 +628,6 @@ class MeshServiceDataAnalyzer:
                     ),
                 ))
 
-        # Group proxies by network so the operator can see how many distinct
-        # mesh networks are in range.
         networks = {n.network_id for n in self.proxies.values() if n.network_id}
         if len(networks) > 1:
             logger.info(f"{len(networks)} distinct mesh networks in range")

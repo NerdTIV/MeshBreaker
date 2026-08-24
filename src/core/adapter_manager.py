@@ -27,8 +27,6 @@ from pathlib import Path
 
 from src.utils import logger
 
-# USB VID:PID of hardware that can act as a real sniffer. Nordic dongles ship
-# under a few different IDs depending on the board and the firmware on it.
 SNIFFER_USB_IDS = {
     "1915:520f": "nRF52840 Dongle (Nordic)",
     "1915:521f": "nRF52840 Dongle (Nordic, DFU)",
@@ -41,7 +39,6 @@ SNIFFER_USB_IDS = {
     "10c4:ea60": "CP210x UART bridge (possible sniffer board)",
 }
 
-# External tools we can drive if the user has them installed.
 SNIFFER_TOOLS = {
     "sniff_receiver.py": "Sniffle (nRF52840) — channel select + connection following",
     "ubertooth-btle": "Ubertooth — passive BLE follow",
@@ -55,9 +52,9 @@ SNIFFER_TOOLS = {
 class Adapter:
     """One HCI adapter as BlueZ sees it."""
 
-    name: str = ""              # hci0, hci1...
+    name: str = ""
     address: str = ""
-    bus: str = ""               # USB, UART, Virtual...
+    bus: str = ""
     is_up: bool = False
     manufacturer: str = ""
     score: int = 0
@@ -68,7 +65,7 @@ class SnifferHardware:
     usb_id: str = ""
     description: str = ""
     tool_available: bool = False
-    port: str = ""              # /dev/ttyACM0 etc, when it exposes a serial link
+    port: str = ""
 
 
 @dataclass
@@ -80,8 +77,8 @@ class SerialDevice:
     root with no dialout membership fails only once you try to drive it.
     """
 
-    port: str = ""              # /dev/ttyACM0
-    usb_id: str = ""            # vid:pid, lowercase
+    port: str = ""
+    usb_id: str = ""
     manufacturer: str = ""
     product: str = ""
     serial: str = ""
@@ -97,9 +94,6 @@ class HardwareReport:
     best_adapter: str = "hci0"
 
 
-# Things that go wrong before a scan even starts, and what to tell the user.
-# BlueZ and bleak report these as raw D-Bus errors, which are useless to
-# anyone who has not read the bleak source.
 _BLE_ERROR_HINTS: list[tuple[tuple[str, ...], str]] = [
     (("dbus-org.bluez", "nosuchunit", "no such unit", "org.bluez was not provided",
       "servicenotfound", "name org.bluez"),
@@ -213,7 +207,7 @@ def _score_adapter(adapter: Adapter) -> int:
     if "nordic" in adapter.manufacturer.lower():
         score += 20
     if adapter.name == "hci0":
-        score += 5           # tie-break only
+        score += 5
     return score
 
 
@@ -229,8 +223,6 @@ def get_best_adapter(default: str = "hci0") -> str:
     return best_of(list_adapters(), default)
 
 
-# Vendors whose boards are worth reporting even on a product ID we do not
-# recognise — firmware flashes change the PID, the vendor stays put.
 SNIFFER_VENDOR_IDS = {
     "1915": "Nordic Semiconductor",
     "2fe3": "Zephyr / Nordic",
@@ -239,8 +231,6 @@ SNIFFER_VENDOR_IDS = {
 }
 
 
-# Serial ports a sniffer board can show up on. ttyACM is the USB CDC class
-# (Nordic dongles, Zephyr firmware); ttyUSB is a UART bridge (CP210x, FTDI).
 SERIAL_PATTERNS = ("ttyACM*", "ttyUSB*")
 
 
@@ -334,7 +324,6 @@ def detect_sniffer_hardware(
     return list(found.values())
 
 
-
 def _describe_unknown(dev: SerialDevice, vendor: str) -> str:
     """Best-effort label for a board on a known vendor but unknown product."""
     label = " ".join(x for x in (dev.manufacturer, dev.product) if x)
@@ -405,8 +394,6 @@ def print_report(report: HardwareReport):
         logger.info("    nRF52840 dongle + Sniffle firmware  (~20 EUR, best value)")
         logger.info("    Ubertooth One                       (~120 EUR)")
 
-    # A board can be plugged in and still be useless to us: no serial port
-    # (wrong firmware, or DFU mode), or a port we cannot write to.
     for sniffer in report.sniffers:
         if not sniffer.port:
             logger.warning(

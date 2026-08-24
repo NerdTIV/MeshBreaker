@@ -30,9 +30,7 @@ class L2CAPFuzzer:
             b"\x00" * 672,
             struct.pack("<HHI", psm, 0, 0),
             struct.pack("<HH", 0xFFFF, 0xFFFF) + b"\x41" * 100,
-            # L2CAP command malformé: Code=0x0A (ConnectionReq), ID=0xFF, Len=0x0000
             struct.pack("<BBHH", 0x0A, 0xFF, 0, psm) + b"\x00" * 64,
-            # Fragmented PDU with wrong length
             struct.pack("<HH", 0xFFFF, 0x0001) + b"\x42",
         ]
 
@@ -76,7 +74,7 @@ class L2CAPFuzzer:
 
     def run(self, psms: list[int] | None = None):
         if psms is None:
-            psms = [1, 3, 5, 7, 15, 17, 25, 27, 29, 31]  # common PSMs
+            psms = [1, 3, 5, 7, 15, 17, 25, 27, 29, 31]
         for psm in psms:
             self.results.extend(self.fuzz_psm(psm))
         crashes = sum(1 for r in self.results if r.crashed)

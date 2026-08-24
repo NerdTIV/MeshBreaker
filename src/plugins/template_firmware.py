@@ -40,7 +40,6 @@ class MyFirmwarePlugin(PluginBase):
         """
         from src.utils import logger
 
-        # Get the firmware path
         firmware_path = None
         if self.session:
             firmware_path = self.session.firmware_path
@@ -52,8 +51,6 @@ class MyFirmwarePlugin(PluginBase):
         data = Path(firmware_path).read_bytes()
         logger.info(f"Loaded {len(data):,} bytes from {firmware_path}")
 
-        # Your analysis logic goes here.
-        # This example searches for a 4-byte magic value.
         MAGIC = b"\xDE\xAD\xBE\xEF"
         hits = []
         for i in range(len(data) - 4):

@@ -14,8 +14,8 @@ _SIG_PATH = Path(__file__).parent.parent.parent / "data" / "firmware_signatures.
 class FirmwareInfo:
     path: str
     size: int = 0
-    fmt: str | None = None        # elf | gzip | squashfs | uboot | ihex | raw | ...
-    arch: str | None = None       # arm32 | arm64 | mips | xtensa | riscv | ...
+    fmt: str | None = None
+    arch: str | None = None
     endian: str = "little"
     elf_type: str | None = None
     rtos: str | None = None
@@ -34,7 +34,6 @@ class FirmwareInfo:
     crypto_keys: dict = field(default_factory=dict)
 
 
-# ELF e_machine → arch name
 _ARCH_MAP: dict[int, str] = {
     0x28: "arm32",
     0xB7: "arm64",
@@ -42,7 +41,7 @@ _ARCH_MAP: dict[int, str] = {
     0x03: "x86",
     0x3E: "x86_64",
     0xF3: "riscv",
-    0x5E: "xtensa",      # ESP32
+    0x5E: "xtensa",
     0x14: "ppc",
     0x15: "ppc64",
     0x53: "avr",
@@ -54,7 +53,6 @@ _ARCH_MAP: dict[int, str] = {
     0xDC: "csky",
 }
 
-# (magic_bytes, offset, format_name)
 _FORMATS: list[tuple[bytes, int, str]] = [
     (b"\x7fELF", 0, "elf"),
     (b"\x1f\x8b", 0, "gzip"),
@@ -81,10 +79,9 @@ _FORMATS: list[tuple[bytes, int, str]] = [
     (b"x\xda", 0, "zlib"),
     (b"x\x01", 0, "zlib"),
 ]
-# Text-based formats (check first line)
 _TEXT_FORMATS: list[tuple[str, str]] = [
-    (":",  "ihex"),    # Intel HEX
-    ("S0", "srec"),    # Motorola S-Record
+    (":",  "ihex"),
+    ("S0", "srec"),
     ("S1", "srec"),
 ]
 
@@ -127,11 +124,9 @@ class FirmwareAnalyzer:
         logger.success(f"Analysis complete — {', '.join(parts)}")
         return self.info
 
-    # format detection
     def _detect_format(self):
         d = self._data
 
-        # Binary magic
         for magic, offset, fmt_id in _FORMATS:
             if d[offset:offset + len(magic)] == magic:
                 self.info.fmt = fmt_id
@@ -142,7 +137,6 @@ class FirmwareAnalyzer:
                     logger.info(f"Format detected: {fmt_id}")
                 return
 
-        # Text-based
         try:
             first = d[:4].decode("ascii", errors="ignore")
             for prefix, fmt_id in _TEXT_FORMATS:
@@ -153,7 +147,6 @@ class FirmwareAnalyzer:
         except Exception:
             pass
 
-        # Entropy → encrypted?
         tmp = CryptoKeyExtractor.__new__(CryptoKeyExtractor)
         tmp.firmware_data = d[:4096]
         ent = tmp.calculate_entropy(d[:4096])
@@ -175,7 +168,6 @@ class FirmwareAnalyzer:
         bits = "32-bit" if ei_class == 1 else "64-bit"
         logger.info(f"ELF {bits} {self.info.endian}-endian arch={self.info.arch}")
 
-    # string extraction
     def _extract_strings(self, min_len: int = 5):
         pattern = re.compile(rb"[\x20-\x7e]{%d,}" % min_len)
         self.info.strings = [
@@ -184,7 +176,6 @@ class FirmwareAnalyzer:
         ]
         logger.info(f"Strings extracted: {len(self.info.strings)}")
 
-    # RTOS detection
     def _detect_rtos(self):
         if not self._sigs or not self.info.strings:
             return
@@ -209,7 +200,6 @@ class FirmwareAnalyzer:
         best_entry = next(e for e in self._sigs["rtos"] if e["id"] == best_id)
         self.info.rtos = best_id
 
-        # Try to extract version string
         version = _extract_version(self.info.strings, best_entry["name"])
         if version:
             self.info.rtos_version = version
@@ -219,7 +209,6 @@ class FirmwareAnalyzer:
             + (f" v{version}" if version else "")
         )
 
-    # SoC/chip detection
     def _detect_soc(self):
         if not self._sigs or not self.info.strings:
             return
@@ -241,13 +230,11 @@ class FirmwareAnalyzer:
         best_entry = next(e for e in self._sigs["soc"] if e["id"] == best_id)
         self.info.soc = best_id
 
-        # Try to identify specific model
         for model in best_entry.get("models", []):
             if any(model.lower() in s for s in low_strings):
                 self.info.soc_model = model
                 break
 
-        # Refine arch from SoC if ELF didn't give it
         if not self.info.arch or self.info.arch.startswith("unknown"):
             soc_arch = best_entry.get("arch", "").split("/")[0].strip()
             if soc_arch:
@@ -259,7 +246,6 @@ class FirmwareAnalyzer:
             + f" ({scores[best_id]} hits)"
         )
 
-    # URL / IP extraction
     def _extract_urls_ips(self):
         text = "\n".join(self.info.strings)
         urls  = re.findall(r"https?://[^\s\"'<>]+", text)
@@ -293,7 +279,6 @@ class FirmwareAnalyzer:
             if self.info.kernel_version and self.info.bluez_version:
                 break
 
-    # crypto extraction
     def _run_crypto_extractor(self):
         ext = CryptoKeyExtractor(str(self.path))
         if ext.load_firmware():
@@ -301,7 +286,6 @@ class FirmwareAnalyzer:
             self.info.crypto_keys  = ext.findings
             self.info.credentials  = ext.findings.get("passwords", [])
 
-    # export
     def export(self, output_dir=None):
         dest_dir = Path(output_dir) if output_dir else self.path.parent / "analysis"
         dest_dir.mkdir(parents=True, exist_ok=True)
@@ -384,7 +368,6 @@ class FirmwareAnalyzer:
         console.print(t)
 
 
-# helpers
 def _load_signatures():
     try:
         return json.loads(_SIG_PATH.read_text())

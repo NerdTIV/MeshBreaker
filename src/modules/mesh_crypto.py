@@ -38,13 +38,11 @@ except ImportError:
 
 ZERO16 = b"\x00" * 16
 
-# Proxy PDU message types (spec 6.3.1).
 PROXY_NETWORK_PDU = 0x00
 PROXY_MESH_BEACON = 0x01
 PROXY_CONFIGURATION = 0x02
 PROXY_PROVISIONING = 0x03
 
-# Proxy SAR field, top 2 bits of the first byte.
 SAR_COMPLETE = 0b00
 SAR_FIRST = 0b01
 SAR_CONTINUATION = 0b10
@@ -92,7 +90,6 @@ def k2(net_key: bytes, p: bytes = b"\x00") -> tuple[int, bytes, bytes]:
     t2 = aes_cmac(t, t1 + p + b"\x02")
     t3 = aes_cmac(t, t2 + p + b"\x03")
 
-    # (T1 || T2 || T3) mod 2^263 — keep the low 33 bytes, mask the top bit.
     material = t1 + t2 + t3
     result = material[-33:]
     nid = result[0] & 0x7F
@@ -148,8 +145,6 @@ def obfuscate_header(privacy_key: bytes, iv_index: int, header: bytes,
     return bytes(h ^ p for h, p in zip(header, pecb[:6]))
 
 
-# Obfuscation is its own inverse, but keep a named function so calling code
-# reads clearly in both directions.
 deobfuscate_header = obfuscate_header
 
 
@@ -176,7 +171,6 @@ def build_network_pdu(net_key: bytes, iv_index: int, transport_pdu: bytes,
 
     nid, encryption_key, privacy_key = k2(net_key)
 
-    # 64-bit NetMIC for control messages, 32-bit for access messages.
     mic_len = 8 if ctl else 4
 
     nonce = network_nonce(ctl, ttl, seq, src, iv_index)
@@ -229,7 +223,7 @@ def parse_network_pdu(net_key: bytes, iv_index: int, pdu: bytes) -> dict | None:
         cipher = AES.new(encryption_key, AES.MODE_CCM, nonce=nonce, mac_len=mic_len)
         plaintext = cipher.decrypt_and_verify(ciphertext, mic)
     except ValueError:
-        return None      # MIC mismatch — wrong key, wrong IV index, or corrupt
+        return None
 
     return {
         "ivi": (pdu[0] >> 7) & 1,
@@ -243,7 +237,6 @@ def parse_network_pdu(net_key: bytes, iv_index: int, pdu: bytes) -> dict | None:
     }
 
 
-#  Smallest ATT MTU any BLE connection can use, before negotiation.
 DEFAULT_ATT_MTU = 23
 
 

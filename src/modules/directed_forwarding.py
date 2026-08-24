@@ -46,8 +46,6 @@ from src.utils import logger
 from src.utils.capture_io import (decode_frames, load_capture,
                                   profile_capture, warn_if_mesh_blind)
 
-# Mesh Protocol 1.1 SIG model IDs. The first two are the Directed Forwarding
-# control plane; the rest tell us how complete the 1.1 stack is.
 MESH_11_MODELS = {
     0x0007: "Directed Forwarding Configuration Server",
     0x0008: "Directed Forwarding Configuration Client",
@@ -69,8 +67,6 @@ MESH_11_MODELS = {
 
 DF_MODELS = (0x0007, 0x0008)
 
-# Network-layer control opcodes used by path discovery (CTL=1).
-# These sit inside the encrypted Network PDU — NetKey required to see them.
 DF_CONTROL_OPCODES = {
     0x01: "PATH_REQUEST",
     0x02: "PATH_REPLY",
@@ -81,8 +77,6 @@ DF_CONTROL_OPCODES = {
     0x07: "PATH_REQUEST_SOLICITATION",
 }
 
-# Symbols that show up in firmware built with Directed Forwarding enabled.
-# Zephyr names them like this; other stacks are close enough to catch.
 DF_FIRMWARE_STRINGS = (
     "directed_forwarding", "bt_mesh_df", "bt_mesh_dfw", "df_srv", "df_cli",
     "path_origin", "path_target", "path_request", "path_reply",
@@ -108,7 +102,7 @@ class DFAudit:
     """What we managed to establish about Directed Forwarding on this target."""
 
     df_present: bool = False
-    df_confidence: int = 0                       # 0-100
+    df_confidence: int = 0
     evidence: list[str] = field(default_factory=list)
     models_found: dict[int, str] = field(default_factory=dict)
     mesh_11_features: list[str] = field(default_factory=list)
@@ -171,7 +165,7 @@ def detect_from_composition_data(composition_hex: str) -> DFAudit:
         logger.error("Composition data too short for a Page 0 header")
         return audit
 
-    offset = 10   # skip CID, PID, VID, CRPL, Features
+    offset = 10
     element = 0
     while offset + 4 <= len(data):
         num_sig = data[offset + 2]
@@ -230,10 +224,9 @@ def detect_from_capture(path: str) -> DFAudit:
     ctl_frames = 0
     mesh_frames = 0
     for _entry, raw in frames:
-        if len(raw) < 3 or raw[0] != 0x2A:      # AD type 0x2A = Mesh Message
+        if len(raw) < 3 or raw[0] != 0x2A:
             continue
         mesh_frames += 1
-        # Network PDU byte 1: bit 7 = CTL, bits 6..0 = TTL.
         if raw[2] & 0x80:
             ctl_frames += 1
 
@@ -274,8 +267,6 @@ def decode_control_pdu(plaintext: bytes) -> dict | None:
     out = {"opcode": opcode, "name": name, "is_df": True,
            "params": plaintext[1:].hex()}
 
-    # PATH_REQUEST and PATH_REPLY both carry the origin/target addresses we
-    # care about when mapping which routes exist.
     body = plaintext[1:]
     if name == "PATH_REQUEST" and len(body) >= 5:
         out["path_origin"] = struct.unpack(">H", body[3:5])[0]

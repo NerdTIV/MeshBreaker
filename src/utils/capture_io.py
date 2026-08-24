@@ -30,8 +30,6 @@ from pathlib import Path
 
 from src.utils import logger
 
-# The AD types mesh traffic actually travels in. BlueZ does not hand these to
-# bleak, which is the whole reason profile_capture() exists.
 MESH_AD_TYPES = {
     0x29: "PB-ADV (provisioning)",
     0x2A: "Mesh Message",
@@ -101,8 +99,6 @@ def load_capture(path: str) -> list[dict] | None:
         logger.error("Capture file's frame list is not a list")
         return None
 
-    # Drop anything that is not a frame object rather than letting it explode
-    # later in whichever parser happens to touch it first.
     frames = [e for e in entries if isinstance(e, dict)]
     skipped = len(entries) - len(frames)
     if skipped:
@@ -154,7 +150,7 @@ class CaptureProfile:
     ad_types: dict[int, int] = field(default_factory=dict)
     mesh_frames: int = 0
     service_data_frames: int = 0
-    source: str = "unknown"          # bleak | sniffer | unknown
+    source: str = "unknown"
 
     @property
     def carries_mesh_ad_types(self) -> bool:
@@ -175,10 +171,6 @@ def profile_capture(entries: list[dict]) -> CaptureProfile:
         if entry.get("service_data"):
             profile.service_data_frames += 1
 
-        # The `ad_type` field is authoritative when present. Do not read it
-        # off raw[0]: in a bleak capture `raw` starts with the manufacturer's
-        # company ID, not an AD type, so raw[0] there is meaningless. Only
-        # sniffer-produced frames put the AD type at the front of `raw`.
         raw = frame_bytes(entry)
         ad_type = entry.get("ad_type")
         if ad_type is None and raw:
@@ -193,7 +185,6 @@ def profile_capture(entries: list[dict]) -> CaptureProfile:
     if profile.carries_mesh_ad_types:
         profile.source = "sniffer"
     elif seen and seen <= {0xFF}:
-        # Only manufacturer data: the shape bleak/BlueZ can produce.
         profile.source = "bleak"
     return profile
 

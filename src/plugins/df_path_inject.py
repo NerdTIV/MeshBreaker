@@ -48,7 +48,6 @@ from src.utils import logger
 PROXY_IN = "00002add-0000-1000-8000-00805f9b34fb"
 PROXY_OUT = "00002ade-0000-1000-8000-00805f9b34fb"
 
-# Opcode names accepted for --opt mode=
 MODES = {
     "path_request": 0x01,
     "path_reply": 0x02,
@@ -179,17 +178,12 @@ class DFPathInjectPlugin(PluginBase):
         dst = _as_int(self.option("dst"), 0xFFFF)
         seq = _as_int(self.option("seq"), 1)
         ttl = _as_int(self.option("ttl"), 127)
-        # Only used for the dry-run preview and as an override; a live
-        # connection reports its own negotiated MTU.
         mtu = _as_int(self.option("mtu"), mc.DEFAULT_ATT_MTU)
         dry_run = _as_bool(self.option("dry_run"), False)
 
         mode = str(self.option("mode", "path_request")).lower()
         raw_params = self.option("params")
 
-        # Show the derived material first — if the NID does not match traffic
-        # you captured from this network, the key is wrong and nothing else
-        # you do here will work.
         mc.print_key_material(net_key)
 
         if raw_params:
@@ -265,8 +259,6 @@ class DFPathInjectPlugin(PluginBase):
         }
 
         if dry_run:
-            # Nothing is connected, so show what the default MTU would produce.
-            # A real connection usually negotiates higher and needs fewer writes.
             preview = mc.wrap_proxy_pdu(network_pdu, mc.PROXY_NETWORK_PDU, att_mtu=mtu)
             logger.info(f"Proxy writes  {len(preview)} at ATT MTU {mtu} "
                         f"({mc.proxy_payload_size(mtu)} bytes each)")
@@ -301,7 +293,6 @@ class DFPathInjectPlugin(PluginBase):
             return {"error": "bleak not installed"}
 
         responses: list[str] = []
-        # Set inside the connection, reported whatever happens after.
         att_mtu = mc.DEFAULT_ATT_MTU
         proxy_pdus: list[bytes] = []
 
@@ -339,7 +330,6 @@ class DFPathInjectPlugin(PluginBase):
                     await client.write_gatt_char(PROXY_IN, chunk, response=False)
                     logger.success(f"  wrote [{i}] {len(chunk)} bytes")
 
-                # Give the node a moment to act on it and answer.
                 await asyncio.sleep(2.0)
                 try:
                     await client.stop_notify(PROXY_OUT)

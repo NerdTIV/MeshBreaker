@@ -36,7 +36,6 @@ class ExamplePlugin(PluginBase):
         except ImportError:
             return {"error": "bleak not installed — pip install bleak"}
 
-        # Standard "Device Name" characteristic, part of the Generic Access service
         DEVICE_NAME = "00002a00-0000-1000-8000-00805f9b34fb"
 
         logger.info(f"Connecting to {self.target}...")

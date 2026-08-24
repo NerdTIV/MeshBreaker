@@ -50,8 +50,6 @@ class MyReconPlugin(PluginBase):
 
         from src.utils import logger
 
-        # Your recon logic goes here.
-        # Replace the lines below with something real.
         logger.info(f"Scanning {self.target} on adapter {self.adapter}...")
 
         result = {

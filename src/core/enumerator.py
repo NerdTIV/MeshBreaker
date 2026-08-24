@@ -110,7 +110,7 @@ class SDPEnumerator:
         self.results: list[dict] = []
 
     def _build_search_req(self):
-        uuid_seq  = b"\x35\x03\x19\x01\x00"     # DataElem: UUID16 L2CAP
+        uuid_seq  = b"\x35\x03\x19\x01\x00"
         max_attr  = struct.pack(">H", 0x0100)
         attr_list = b"\x35\x05\x0a\x00\x00\xff\xff"
         cont      = b"\x00"

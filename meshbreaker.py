@@ -107,8 +107,6 @@ def _print_devices(devices: list, title: str = "Devices"):
     console.print(t)
 
 
-# CLI
-
 @click.group()
 @click.option("--output",  "-o", default="./output", show_default=True,
               help="Output directory", envvar="MB_OUTPUT")
@@ -121,8 +119,6 @@ def cli(ctx, output, adapter):
     ctx.obj["output"]  = output
     ctx.obj["adapter"] = adapter
 
-
-# commands
 
 @cli.command()
 @click.option("--time",    "-t", "scan_time", default=10.0, show_default=True,
@@ -256,9 +252,6 @@ def firmware(ctx, path, no_protocol_id):
     _save_session(session, output)
 
 
-# Named enumerate_cmd, not enumerate: a module-level "def enumerate" shadows
-# the builtin for the whole file, and _print_devices() calls the builtin. The
-# CLI name is unchanged.
 @cli.command("enumerate")
 @click.option("--target", "-t", default=None, metavar="MAC",
               help="Target BT MAC address")
@@ -430,8 +423,6 @@ def exploit(ctx, target, method, plugin_name, netkey, iv_index, opts, list_plugi
         console.print(t)
         return
 
-    # Plugins decide for themselves whether they need a target — df_path_inject
-    # can build and print a PDU with --opt dry_run=true and no device at all.
     if method != "plugin" and not session.target_mac:
         logger.error("No target MAC. Use: meshbreaker set-target AA:BB:CC:DD:EE:FF")
         sys.exit(1)
@@ -507,7 +498,6 @@ def cve_check(ctx, kernel, bluez, runc, tags):
         all_tags.extend(cvt)
     ctx_data["protocol_tags"] = all_tags
 
-    # auto-pull versions from firmware analysis if available in session
     fw = session.get("firmware", {})
     auto_kernel = fw.get("kernel_version")
     auto_bluez  = fw.get("bluez_version")
@@ -826,7 +816,6 @@ def hci_capture(ctx, duration, no_scan):
         "ad_types": {f"0x{t:02X}": c for t, c in result.ad_types.items()},
     })
     if result.output_file:
-        # Later phases read this, and unlike a bleak capture it can hold mesh.
         session.results["capture_file"] = result.output_file
     _save_session(session, output)
 
@@ -873,13 +862,10 @@ def provisioning(ctx, capture_file, target, no_gatt, netkey):
 
     path = capture_file or session.results.get("capture_file")
     if path and Path(path).exists():
-        # PB-ADV analysis: only possible if the capture actually holds AD
-        # type 0x29, which a bleak capture never does. The analyzer says so.
         analyzer = prov.ProvisioningAnalyzer()
         sessions = analyzer.parse_file(path)
         prov.print_sessions(sessions, analyzer.findings)
 
-        # Service data analysis: what a standard adapter CAN see.
         service = prov.MeshServiceDataAnalyzer(net_key=net_key)
         unprovisioned, proxies = service.parse_file(path)
         prov.print_service_data(unprovisioned, proxies)
@@ -949,9 +935,6 @@ def directed_forwarding(ctx, capture_file, fw_path, composition):
     output  = ctx.obj["output"]
     session = _load_session(output)
 
-    # An explicit flag always beats whatever the session happens to hold, so
-    # --capture is not silently ignored because an earlier command left a
-    # firmware path behind.
     session_capture = session.results.get("capture_file")
 
     if composition:

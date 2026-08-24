@@ -24,8 +24,8 @@ class CapturedBeacon:
     rssi:      int
     ad_type:   int | None
     raw_ad:    bytes
-    mesh_hint: str | None   # sig_mesh | wirepas | thread | custom | None
-    service_data: dict = field(default_factory=dict)   # uuid -> hex payload
+    mesh_hint: str | None
+    service_data: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -43,17 +43,14 @@ _COMPANY_WIREPAS = 0x0077
 def _detect_mesh(adv: "AdvertisementData"):
     raw = adv.manufacturer_data or {}
 
-    # SIG Mesh: AD type 0x2A/0x2B/0x29 in service_data or raw
     for uuid in adv.service_data:
         uid = uuid.lower().replace("-", "")
         if "1827" in uid or "1828" in uid:
             return "sig_mesh"
 
-    # Wirepas: company ID 0x0077
     if _COMPANY_WIREPAS in raw:
         return "wirepas"
 
-    # Thread: UUID FFFB
     for uuid in (adv.service_uuids or []):
         if "fffb" in uuid.lower():
             return "thread"
@@ -87,10 +84,6 @@ class PassiveCapture:
                 raw_bytes = bytes([k & 0xFF, k >> 8]) + v
                 break
 
-            # BlueZ will not give us raw AD structures, but it does surface
-            # service data — and the mesh provisioning (0x1827) and proxy
-            # (0x1828) services advertise there. Keep it: it is the only mesh
-            # signal a standard adapter can see.
             service_data = {str(uuid): payload.hex()
                             for uuid, payload in (adv.service_data or {}).items()}
 

@@ -52,18 +52,15 @@ from pathlib import Path
 from src.utils import logger
 from src.utils.capture_io import AD_TYPE_NAMES, MESH_AD_TYPES
 
-# Linux HCI socket constants. Python's socket module does not export these.
 AF_BLUETOOTH = 31
 BTPROTO_HCI = 1
 HCI_CHANNEL_MONITOR = 2
 
-# Monitor packet opcodes we care about (bluez monitor/hci.h).
 MON_NEW_INDEX = 0
 MON_DEL_INDEX = 1
 MON_COMMAND_PKT = 2
 MON_EVENT_PKT = 3
 
-# HCI event codes.
 HCI_EV_LE_META = 0x3E
 LE_ADVERTISING_REPORT = 0x02
 LE_EXT_ADVERTISING_REPORT = 0x0D
@@ -109,9 +106,9 @@ def parse_ad_structures(payload: bytes) -> list[ADStructure]:
     while index < len(payload):
         length = payload[index]
         if length == 0:
-            break                      # padding / end of significant data
+            break
         if index + 1 + length > len(payload):
-            break                      # truncated, keep what we already have
+            break
         ad_type = payload[index + 1]
         data = payload[index + 2:index + 1 + length]
         out.append(ADStructure(ad_type=ad_type, data=data))
@@ -182,12 +179,11 @@ def _parse_monitor_packet(packet: bytes) -> list[dict]:
     if event_code != HCI_EV_LE_META:
         return []
 
-    # body: event_code (1) param_len (1) subevent (1) params...
     if len(body) < 3:
         return []
     subevent = body[2]
     if subevent != LE_ADVERTISING_REPORT:
-        return []          # extended reports have a different layout
+        return []
 
     return parse_le_advertising_report(body[3:])
 
@@ -250,7 +246,6 @@ class HCIMonitorCapture:
             raise OSError("Cannot locate libc to bind the monitor channel")
         libc = ctypes.CDLL(libc_path, use_errno=True)
 
-        # 0xFFFF = HCI_DEV_NONE, meaning every adapter rather than one index.
         addr = struct.pack("<HHH", AF_BLUETOOTH, 0xFFFF, HCI_CHANNEL_MONITOR)
         if libc.bind(sock.fileno(), addr, len(addr)) != 0:
             err = ctypes.get_errno()
@@ -285,8 +280,6 @@ class HCIMonitorCapture:
 
         scanner_task = None
         if drive_scan:
-            # The monitor is passive: it only shows what the adapter already
-            # receives, so something has to put the radio into scanning mode.
             scanner_task = asyncio.create_task(self._drive_scan(duration))
 
         start = time.time()

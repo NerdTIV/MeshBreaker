@@ -35,7 +35,7 @@ from src.utils import logger
 class PhaseResult:
     phase_id: int
     name: str
-    status: str = "pending"        # pending | ok | skipped | failed
+    status: str = "pending"
     detail: str = ""
     elapsed: float = 0.0
 
@@ -46,7 +46,7 @@ class Phase:
     name: str
     description: str
     handler: Callable
-    active: bool = False           # True = touches the target
+    active: bool = False
     needs_target: bool = False
     needs_capture: bool = False
     needs_firmware: bool = False
@@ -141,8 +141,6 @@ class Orchestrator:
                 result.status = "failed"
                 hint = explain_ble_error(e)
                 if hint:
-                    # Keep the chain summary readable — a raw D-Bus error tells
-                    # the reader nothing about what to do next.
                     result.detail = "Bluetooth unavailable"
                     logger.error(f"Phase {phase.phase_id} ({phase.name}): {e}")
                     for line in hint.splitlines():
@@ -156,7 +154,6 @@ class Orchestrator:
         _print_chain_summary(self.results)
         return self.results
 
-    # phase handlers
 
     async def _phase_recon(self):
         from src.core.scanner import BLEScanner
@@ -182,8 +179,6 @@ class Orchestrator:
         if matches:
             self.session.mesh_protocol = matches[0].protocol_id
 
-        # Pick a target automatically when the fingerprinter is confident and
-        # the user has not chosen one, so the chain can keep going unattended.
         if not self.session.target_mac and matches and matches[0].confidence >= 60:
             mesh_devices = [d for d in devices if d.uuids]
             if mesh_devices:
@@ -237,7 +232,6 @@ class Orchestrator:
             sessions = analyzer.parse_file(capture_file)
             print_sessions(sessions, analyzer.findings)
 
-            # Service data works with a standard adapter; PB-ADV does not.
             service = MeshServiceDataAnalyzer()
             unprovisioned, proxies = service.parse_file(capture_file)
             print_service_data(unprovisioned, proxies)
@@ -317,7 +311,6 @@ class Orchestrator:
         analyzer.print_report()
         analyzer.export(self.output_dir)
 
-        # Keep it around so the DF phase can search the strings.
         self._firmware_info = info
 
         self.session.store("firmware", {
@@ -361,7 +354,6 @@ class Orchestrator:
         for entry in self.session.get("protocol_id", []):
             tags.extend(entry.get("cve_tags", []) if isinstance(entry, dict) else entry.cve_tags)
 
-        # Findings from the newer phases feed the CVE matcher too.
         prov = self.session.get("provisioning_capture", {})
         if prov.get("findings"):
             tags.append("mesh_provisioning")
