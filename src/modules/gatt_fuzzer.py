@@ -127,7 +127,8 @@ class GATTFuzzer:
 
         while True:
             try:
-                async with BleakClient(self.target) as client:
+                async with BleakClient(self.target,
+                                   bluez={"adapter": self.adapter}) as client:
                     if not targets:
                         targets = self._writable(client)
                         logger.success(f"Connected — {len(targets)} writable "

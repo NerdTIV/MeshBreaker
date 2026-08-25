@@ -301,7 +301,7 @@ class DFPathInjectPlugin(PluginBase):
             logger.data(f"  Proxy Out: {bytes(data).hex()}")
 
         try:
-            async with BleakClient(self.target, adapter=self.adapter) as client:
+            async with BleakClient(self.target, bluez={"adapter": self.adapter}) as client:
                 att_mtu = _negotiated_mtu(client, forced_mtu)
                 logger.success(f"Connected — ATT MTU {att_mtu}, "
                                f"{mc.proxy_payload_size(att_mtu)} payload bytes per write")

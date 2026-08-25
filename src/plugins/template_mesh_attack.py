@@ -60,7 +60,7 @@ class MyMeshAttackPlugin(PluginBase):
         logger.info(f"Connecting to {self.target}...")
 
         try:
-            async with BleakClient(self.target, adapter=self.adapter) as client:
+            async with BleakClient(self.target, bluez={"adapter": self.adapter}) as client:
                 logger.success(f"Connected to {self.target}")
 
                 my_payload = bytes([0x00] * 20)

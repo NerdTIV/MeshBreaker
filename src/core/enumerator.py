@@ -43,7 +43,8 @@ class GATTEnumerator:
         findings: dict[str, Any] = {"target": self.target, "services": [], "attack_surface": []}
 
         try:
-            async with BleakClient(self.target) as client:
+            async with BleakClient(self.target,
+                                   bluez={"adapter": self.adapter}) as client:
                 logger.success(f"Connected — MTU {client.mtu_size}")
                 for svc in client.services:
                     svc_info = {
@@ -202,7 +203,7 @@ async def probe_writable(mac: str, adapter: str = "hci0",
     """
     result = ProbeResult(mac=mac)
     try:
-        async with BleakClient(mac, adapter=adapter, timeout=timeout) as client:
+        async with BleakClient(mac, bluez={"adapter": adapter}, timeout=timeout) as client:
             result.connected = True
             result.mtu = getattr(client, "mtu_size", 0) or 0
             for service in client.services:

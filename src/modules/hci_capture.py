@@ -400,7 +400,7 @@ class HCIMonitorCapture:
                            "'bluetoothctl scan on'")
             return
         try:
-            async with BleakScanner(adapter=self.adapter):
+            async with BleakScanner(bluez={"adapter": self.adapter}):
                 await asyncio.sleep(duration)
         except asyncio.CancelledError:
             raise

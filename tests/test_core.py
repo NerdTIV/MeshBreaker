@@ -750,6 +750,94 @@ def test_capture_aborts_when_no_scan_can_run(monkeypatch):
     assert sock.closed
 
 
+def test_adapter_listing_survives_a_controller_that_errors(monkeypatch):
+    """`hciconfig -a` gives up at the first adapter that refuses a query.
+
+    An LE-only controller answers "Can't read local name" and every adapter
+    listed after it disappears, so a working Intel card went missing from
+    setup while a weaker dongle was picked as the best one. The listing must
+    come from plain `hciconfig`, which does not query each device.
+    """
+    listing = (
+        "hci1:\tType: Primary  Bus: USB\n"
+        "\tBD Address: 00:00:00:00:00:00  ACL MTU: 27:7  SCO MTU: 0:0\n"
+        "\tUP RUNNING \n"
+        "\n"
+        "hci0:\tType: Primary  Bus: USB\n"
+        "\tBD Address: 44:AF:28:75:7E:DD  ACL MTU: 1021:4  SCO MTU: 96:6\n"
+        "\tUP RUNNING \n"
+    )
+
+    calls = []
+
+    def fake_run(cmd, timeout=10):
+        calls.append(cmd)
+        if cmd == ["hciconfig"]:
+            return listing
+        if cmd[:1] == ["hciconfig"] and "-a" in cmd:
+            if "hci1" in cmd:
+                return ""
+            return "\tManufacturer: Intel Corp. (2)\n"
+        return ""
+
+    monkeypatch.setattr(am, "_run", fake_run)
+    adapters = am.list_adapters()
+
+    assert [a.name for a in adapters] == ["hci1", "hci0"]
+    assert ["hciconfig"] in calls
+    assert am.best_of(adapters) == "hci0"
+    assert next(a for a in adapters if a.name == "hci0").manufacturer == "Intel Corp. (2)"
+
+
+def test_no_bleak_call_uses_the_deprecated_adapter_kwarg():
+    """`adapter=` is deprecated, and passing it broke parallel scanning.
+
+    Two scanners started with it could not run on two adapters at once: the
+    second answered "Operation already in progress" and contributed nothing.
+    The same run with bluez={"adapter": name} works. The call spans several
+    lines, so this checks the whole call, not one line at a time.
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    offenders = []
+    for f in sorted(root.rglob("*.py")):
+        if "__pycache__" in str(f) or f.name == Path(__file__).name:
+            continue
+        body = f.read_text()
+        for match in re.finditer(r"Bleak(?:Scanner|Client)\((?:[^()]|\([^()]*\))*\)",
+                                 body, re.S):
+            if re.search(r"\badapter\s*=", match.group(0)):
+                line = body[:match.start()].count("\n") + 1
+                offenders.append(f"{f.relative_to(root)}:{line}")
+    assert not offenders, f"deprecated adapter= kwarg: {offenders}"
+
+
+def test_every_bleak_entry_point_passes_an_adapter():
+    """-a/--adapter was silently ignored by recon, enumerate and fuzz.
+
+    Those three built their scanner or client with no adapter at all, so the
+    option existed, was documented, and did nothing but scan the default
+    controller.
+    """
+    import re
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    missing = []
+    for name in ("src/core/scanner.py", "src/core/enumerator.py",
+                 "src/modules/gatt_fuzzer.py", "src/modules/passive_capture.py",
+                 "src/modules/hci_capture.py"):
+        body = (root / name).read_text()
+        for match in re.finditer(r"Bleak(?:Scanner|Client)\((?:[^()]|\([^()]*\))*\)",
+                                 body, re.S):
+            if "bluez" not in match.group(0):
+                line = body[:match.start()].count("\n") + 1
+                missing.append(f"{name}:{line}")
+    assert not missing, f"bleak call without an adapter: {missing}"
+
+
 def test_cli_commands_do_not_shadow_builtins():
     """A click command named like a builtin shadows it for the whole module.
 

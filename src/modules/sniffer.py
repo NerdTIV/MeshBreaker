@@ -107,18 +107,40 @@ class MultiAdapterSniffer:
                 seen_per_adapter[adapter_name].add(device.address)
             return _cb
 
-        async def _scan_on(adapter_name: str):
-            try:
-                scanner = BleakScanner(
-                    detection_callback=_make_callback(adapter_name),
-                    adapter=adapter_name,
-                )
-                async with scanner:
-                    await asyncio.sleep(duration)
-            except Exception as e:
-                logger.error(f"Adapter {adapter_name} failed: {logger.describe(e)}")
+        async def _scan_on(adapter_name: str, slot: int):
+            """Start one adapter scanning, retrying while BlueZ is still busy.
 
-        await asyncio.gather(*[_scan_on(a) for a in self.adapters])
+            Starting several discoveries at once, or starting one while a
+            previous run has not finished tearing its own down, answers
+            "Operation already in progress" and that adapter contributes
+            nothing to the capture. Staggering the starts and retrying costs
+            a second and keeps the adapter in the run.
+            """
+            await asyncio.sleep(slot * 0.5)
+            deadline = time.time() + duration
+            attempt = 0
+            while True:
+                try:
+                    scanner = BleakScanner(
+                        detection_callback=_make_callback(adapter_name),
+                        bluez={"adapter": adapter_name},
+                    )
+                    async with scanner:
+                        await asyncio.sleep(max(0.0, deadline - time.time()))
+                    return
+                except Exception as e:
+                    text = logger.describe(e)
+                    busy = "in progress" in text.lower()
+                    attempt += 1
+                    if not busy or attempt > 3 or time.time() >= deadline:
+                        logger.error(f"Adapter {adapter_name} failed: {text}")
+                        return
+                    logger.warning(f"Adapter {adapter_name} busy, retrying "
+                                   f"({attempt}/3)")
+                    await asyncio.sleep(1.0)
+
+        await asyncio.gather(*[_scan_on(a, i)
+                               for i, a in enumerate(self.adapters)])
         self.result.duration = time.time() - start
 
         for adapter, macs in seen_per_adapter.items():

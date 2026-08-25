@@ -109,7 +109,8 @@ class PassiveCapture:
                 cb(b)
 
         logger.info(f"Passive BLE capture — {duration}s on {self.adapter}")
-        async with BleakScanner(detection_callback=_callback, adapter=self.adapter):
+        async with BleakScanner(detection_callback=_callback,
+                                bluez={"adapter": self.adapter}):
             await asyncio.sleep(duration)
 
         self._session.duration     = time.time() - start

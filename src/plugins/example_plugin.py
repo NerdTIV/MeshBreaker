@@ -41,7 +41,7 @@ class ExamplePlugin(PluginBase):
         logger.info(f"Connecting to {self.target}...")
 
         try:
-            async with BleakClient(self.target, adapter=self.adapter) as client:
+            async with BleakClient(self.target, bluez={"adapter": self.adapter}) as client:
                 raw = await client.read_gatt_char(DEVICE_NAME)
                 name = raw.decode("utf-8", errors="replace")
                 logger.success(f"Device name: {name}")

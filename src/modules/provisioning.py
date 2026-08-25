@@ -418,7 +418,7 @@ async def probe_pb_gatt(target: str, adapter: str = "hci0") -> dict:
 
     logger.info(f"PB-GATT probe → {target}")
     try:
-        async with BleakClient(target, adapter=adapter) as client:
+        async with BleakClient(target, bluez={"adapter": adapter}) as client:
             for svc in client.services:
                 uuid = str(svc.uuid).lower()
                 if "1827" in uuid:

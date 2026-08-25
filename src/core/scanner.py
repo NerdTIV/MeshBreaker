@@ -46,7 +46,8 @@ class BLEScanner:
             ))
 
         try:
-            scanner = BleakScanner(detection_callback=_cb)
+            scanner = BleakScanner(detection_callback=_cb,
+                                   bluez={"adapter": self.adapter})
             await scanner.start()
             await asyncio.sleep(self.timeout)
             await scanner.stop()

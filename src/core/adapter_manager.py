@@ -158,7 +158,7 @@ def list_adapters() -> list[Adapter]:
                 BD Address: AA:BB:CC:DD:EE:FF  ACL MTU: 1021:8
                 UP RUNNING
     """
-    out = _run(["hciconfig", "-a"])
+    out = _run(["hciconfig"])
     if not out:
         logger.warning("hciconfig produced no output — is bluez installed?")
         return []
@@ -188,8 +188,25 @@ def list_adapters() -> list[Adapter]:
         adapters.append(current)
 
     for a in adapters:
+        a.manufacturer = _manufacturer(a.name)
         a.score = _score_adapter(a)
     return adapters
+
+
+def _manufacturer(name: str) -> str:
+    """Ask one adapter for its manufacturer, tolerating a controller that errors.
+
+    This is why the listing above uses plain `hciconfig` and not `hciconfig -a`:
+    `-a` walks every adapter in one go and gives up at the first one that
+    refuses a query. An LE-only controller fails "Can't read local name", and
+    every adapter after it silently vanishes from the list.
+    """
+    out = _run(["hciconfig", name, "-a"])
+    for line in out.splitlines():
+        found = re.search(r"Manufacturer:\s+(.+?)\s*$", line)
+        if found:
+            return found.group(1).strip()
+    return ""
 
 
 def _score_adapter(adapter: Adapter) -> int:

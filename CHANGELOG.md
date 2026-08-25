@@ -135,6 +135,22 @@
   integrity, corrupt capture handling and BLE error explanation.
 
 ### Fixed
+- `setup` listed only one adapter when two were plugged in. The listing came
+  from `hciconfig -a`, which walks every adapter in one pass and gives up at
+  the first one that refuses a query — an LE-only controller answers "Can't
+  read local name", and every adapter after it vanished. A working Intel card
+  went missing while a weaker dongle was chosen as the best one. The listing
+  now uses plain `hciconfig` and asks each adapter for its manufacturer
+  separately, tolerating one that errors.
+- `-a/--adapter` was silently ignored by `recon`, `enumerate` and `fuzz`.
+  All three built their scanner or client with no adapter at all, so the
+  option existed, was documented, and only ever drove the default controller.
+- Parallel `sniff` left one adapter out. Every bleak call used the deprecated
+  `adapter=` keyword, and with it a second scanner cannot start while a first
+  is running: it answers "Operation already in progress" and captures
+  nothing, which is why two adapters yielded 3 adverts instead of 344. Calls
+  now pass `bluez={"adapter": name}`, starts are staggered, and an adapter
+  that reports busy is retried instead of dropped.
 - A capture whose scan could not start ran to completion recording nothing.
   The monitor socket is passive — it shows what the adapter already receives
   — so with no scan in progress it captures silence. The failure was only a

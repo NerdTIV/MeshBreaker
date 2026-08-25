@@ -80,7 +80,7 @@ class MeshFuzzer:
             all_payloads.extend(fn())
 
         try:
-            async with BleakClient(self.target, adapter=self.adapter) as client:
+            async with BleakClient(self.target, bluez={"adapter": self.adapter}) as client:
                 for strat_name, payload in all_payloads:
                     r = await self._send_payload(client, strat_name, payload)
                     self.results.append(r)
